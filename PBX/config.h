@@ -27,3 +27,5 @@
 // ADC hardware definitions
 #define ADC_VREF          5.0
 #define ADC_COUNTS        1024
+#define VOLTS_TO_COUNTS(V)   (int)(V * ADC_COUNTS / ADC_VREF + 0.5)
+

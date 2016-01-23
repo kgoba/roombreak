@@ -1,6 +1,7 @@
 #pragma once
 
-#include "util.h"
+#include "config.h"
+#include <Common/util.h>
 
 
 class AudioPlayer {

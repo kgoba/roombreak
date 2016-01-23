@@ -111,7 +111,7 @@ class TSB:
                 logging.error("Data request not received, aborting")
                 return
             logging.debug("Sending page %d" % iPage)
-            time.sleep(0.05)
+            #time.sleep(0.05)
             self.send(self.CONFIRM)
             if iData + self.pageSize <= len(data):
                 pageData = data[iData : iData + self.pageSize]
@@ -120,7 +120,7 @@ class TSB:
                 pageData += bytes(b'\xFF' * (self.pageSize - len(pageData)))
                 
             #logging.debug("Sending %d bytes: [%s]" % (len(pageData), pageData.encode('hex')))
-            time.sleep(0.05)
+            #time.sleep(0.05)
             self.send(pageData)
             iData += self.pageSize
             iPage += 1

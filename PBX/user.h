@@ -1,5 +1,6 @@
 #pragma once
-#include "util.h"
+#include "config.h"
+#include "Common/util.h"
 #include "line.h"
 
 class Operator;
