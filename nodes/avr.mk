@@ -1,17 +1,8 @@
-PROGRAMMER = usbasp
-F_CPU 	= 16000000
-MCU 	= atmega328p
-
-CXX = avr-g++
-LD  = avr-g++
-OBJDUMP = avr-objdump
-OBJCOPY = avr-objcopy
-SIZE	= avr-size
 
 CXXFLAGS = -g -mmcu=$(MCU) -Os -fdata-sections -ffunction-sections -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -fno-inline-small-functions -DF_CPU=$(F_CPU)
-INCLUDES = -I../
-LFLAGS   = -g -mmcu=$(MCU) -Wl,--relax,--gc-sections
-LIBS =
+INCLUDES = -I..
+LFLAGS   += -g -mmcu=$(MCU) -Wl,--relax,--gc-sections -L../Common
+LIBS 	 = -lcommon
 
 # SRC = $(wildcard *.cc) $(EXTSRC)
 OBJ = $(SRC:.cc=.o)

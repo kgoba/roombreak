@@ -1,5 +1,6 @@
 TARGET 	 = pbx
-SRC 	 = pbx.cc user.cc line.cc ../Common/util.cc
+SRC 	 = pbx.cc user.cc line.cc
 
+include ../common.mk
 include ../avr.mk
 
