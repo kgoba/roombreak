@@ -13,6 +13,7 @@ INCLUDES = -I../
 LFLAGS   = -g -mmcu=$(MCU) -Wl,--relax,--gc-sections
 LIBS =
 
+# SRC = $(wildcard *.cc) $(EXTSRC)
 OBJ = $(SRC:.cc=.o)
 
 .PHONY: all clean fuse program
