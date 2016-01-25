@@ -2,6 +2,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
+#include "config.h"
 #include "Common/util.h"
 #include "line.h"
 #include "user.h"
@@ -47,3 +48,6 @@ int main()
   }
   return 0;
 }
+
+extern "C" void __cxa_pure_virtual() { while (1); }
+

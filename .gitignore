@@ -33,3 +33,14 @@
 
 # Debug files
 *.dSYM/
+
+# Eclipse build folders
+Debug/
+Release/
+
+# Eclipse files
+RemoteSystemsTempFiles/
+.metadata/
+.cproject
+.project
+.settings/
