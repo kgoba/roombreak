@@ -1,4 +1,5 @@
 #include <Common/util.h>
+#include <Common/serial.h>
 
 #include <util/delay.h>
 
@@ -54,7 +55,7 @@ Serial serial;
 
 void setup() {
   task.setup();
-  serial.begin(19200);
+  serial.begin(19200, 1, 2);
   _delay_ms(1000);
   serial.putChar('x');
 }
@@ -74,4 +75,3 @@ int main()
   }
   return 0;
 }
-

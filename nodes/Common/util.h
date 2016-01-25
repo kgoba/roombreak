@@ -27,15 +27,3 @@ PinState digitalRead(byte pin);
 
 void analogReference();
 word analogRead(byte pin);
-
-class Serial {
-public:  
-    Serial();
-    
-    void begin(int baudrate);
-    
-    void putChar(char c);
-    char getChar();
-};
-
-//extern Serial 

@@ -92,38 +92,3 @@ word analogRead(byte pin)
   }
   return ADC;
 }
-
-Serial::Serial() {
-    
-}
-
-void Serial::begin(int baudrate) {
-    int val_UBRR0 = (((F_CPU) + 8UL * (baudrate)) / (16UL * (baudrate)) -1UL);
-    UBRR0 = val_UBRR0;
-    
-    bool use2x = false;
-    if (use2x) {
-        bit_set(UCSR0A, U2X0);
-    }
-    else {
-        bit_clear(UCSR0A, U2X0);
-    }
-    
-    UCSR0C = bit_mask2(UCSZ01, UCSZ00); /* 8-bit data */
-    UCSR0B = bit_mask3(RXEN0, TXEN0, RXCIE0);   /* Enable RX and TX */
-}
-
-void Serial::putChar(char c) {
-    loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
-    UDR0 = c;
-}
-
-char Serial::getChar() {
-    loop_until_bit_is_set(UCSR0A, RXC0); /* Wait until data exists. */
-    return UDR0;
-}
-
-ISR(USART_RX_vect) {
-    byte b = UDR0;
-    //
-}

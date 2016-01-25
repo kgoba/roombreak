@@ -3,10 +3,11 @@
 #include <util/delay.h>
 
 #include "config.h"
-#include "Common/util.h"
+#include <Common/util.h>
+#include <Common/serial.h>
+
 #include "line.h"
 #include "user.h"
-
 
 AudioPlayer player1(3, 4, 5);
 PLineConfig config1 = { 
@@ -30,7 +31,7 @@ void setup()
   ADCSRA = (1 << ADEN) | (1 << ADPS2);      // prescaler 16
 
   player1.setup();
-  
+
   sei();
 }
 
