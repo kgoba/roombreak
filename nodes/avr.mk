@@ -5,7 +5,7 @@ LFLAGS   += -g -mmcu=$(MCU) -Wl,--relax,--gc-sections -L../Common
 LIBS 	 = -lcommon
 
 # SRC = $(wildcard *.cc) $(EXTSRC)
-OBJ = $(SRC:.cc=.o) $(SRC:.cpp=.o)
+OBJ = $(SRC:.cc=.o)
 
 .PHONY: all clean fuse program
 

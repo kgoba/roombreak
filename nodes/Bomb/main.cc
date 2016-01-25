@@ -50,10 +50,13 @@ void BombTask::minusSecond()
 
 
 BombTask task;
+Serial serial;
 
 void setup() {
   task.setup();
+  serial.begin(19200);
   _delay_ms(1000);
+  serial.putChar('x');
 }
 
 void loop() {

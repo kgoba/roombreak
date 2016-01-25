@@ -1,8 +1,15 @@
 #pragma once
-#include <avr/io.h>
+#include <stdint.h>
 
 typedef uint8_t   byte;
 typedef uint16_t  word;
+
+#define bit_set(var, bit)       var ^= (1 << bit)
+#define bit_clear(var, bit)     var &= ~(1 << bit)
+#define bit_check(var, bit)     (var & (1 << bit))
+#define bit_mask1(bit)          (1 << bit)
+#define bit_mask2(bit1, bit2)   ((1 << bit1) | (1 << bit2))
+#define bit_mask3(b1, b2, b3)   ((1 << b1) | (1 << b2) | (1 << b3))
 
 enum PinState {
   LOW, HIGH
@@ -20,3 +27,15 @@ PinState digitalRead(byte pin);
 
 void analogReference();
 word analogRead(byte pin);
+
+class Serial {
+public:  
+    Serial();
+    
+    void begin(int baudrate);
+    
+    void putChar(char c);
+    char getChar();
+};
+
+//extern Serial 
