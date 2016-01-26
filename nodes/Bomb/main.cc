@@ -55,7 +55,8 @@ Serial serial;
 
 void setup() {
   task.setup();
-  serial.begin(19200, 1, 2);
+  serial.setup(19200, 1, 2);
+  serial.enable();
   _delay_ms(1000);
   serial.putChar('x');
 }

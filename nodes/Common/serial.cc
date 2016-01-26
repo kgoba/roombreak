@@ -8,7 +8,7 @@ FIFO<byte, 8> Serial::txFIFO;
 byte Serial::_pinTXE;
 byte Serial::_pinRXD;
 
-void Serial::begin(int baudrate, byte pinTXE, byte pinRXD) {
+void Serial::setup(int baudrate, byte pinTXE, byte pinRXD) {
     _pinTXE = pinTXE;
     _pinRXD = pinRXD;
 
@@ -24,7 +24,14 @@ void Serial::begin(int baudrate, byte pinTXE, byte pinRXD) {
     }
     
     UCSR0C = bit_mask2(UCSZ01, UCSZ00); /* 8-bit data */
+}
+
+void Serial::enable() {
     UCSR0B = bit_mask3(RXEN0, TXEN0, RXCIE0);   /* Enable RX and TX */
+}
+
+void Serial::disable() {
+    UCSR0B = 0;
 }
 
 void Serial::putChar(char c) {

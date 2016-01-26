@@ -5,7 +5,10 @@
 
 class Serial {
 public:
-    static void begin(int baudrate, byte pinTXE, byte pinRXD);
+    static void setup(int baudrate, byte pinTXE, byte pinRXD);
+    
+    static void enable();
+    static void disable();
 
     static void putChar(char c);
     static char getChar();
