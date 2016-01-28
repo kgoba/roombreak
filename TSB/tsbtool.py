@@ -7,7 +7,7 @@ import struct
 import time
 import sys
 
-logging.basicConfig(level = logging.DEBUG)
+logging.basicConfig(level = logging.INFO)
 
 parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
@@ -40,7 +40,6 @@ class TSB:
         self.connected = False
         
     def connect(self, password):
-        logging.debug("Sending login information")
         for i in range(self.N_RETRIES):
             self.send('@@@%s' % password)
             info = self.receive(self.INFO_SIZE)        
@@ -48,7 +47,7 @@ class TSB:
                 logging.debug("Got %d bytes : [%s]" % (len(info), info.encode('hex')))
                 if len(info) == self.INFO_SIZE:
                     info = struct.unpack('<3sHBBBBBHHH', info)
-                    print info
+                    #print info
                     if info[0] == 'TSB' or info[0] == '\xd5SB':
                         self.pageSize = 2 * info[6]
                         self.flashSize = 2 * info[7]
@@ -75,7 +74,7 @@ class TSB:
     def receive(self, size, nRetries = 3):
         for i in range(nRetries):
             recv = self.ser.read(size)
-            logging.debug("Received %d bytes" % len(recv))
+            #logging.debug("Received %d bytes" % len(recv))
             if not recv:
                 continue
             if len(recv) == size:
@@ -89,7 +88,7 @@ class TSB:
             if len(recv) == 0:
                 continue
             if recv == data:
-                logging.debug("Received expected bytes (%s)" % (recv.encode('hex')))
+                #logging.debug("Received expected bytes (%s)" % (recv.encode('hex')))
                 return True
             else:
                 logging.warning("Received unexpected bytes (%s), expecting (%s)" % (recv.encode('hex'), data.encode('hex')))
@@ -98,7 +97,7 @@ class TSB:
         return False
         
     def writeFlash(self, data):
-        logging.info("Sending write flash command")
+        logging.debug("Sending write flash command...")
         self.send(self.CMD_WR_FLASH)
         
         nPages = len(data) / self.pageSize
@@ -134,14 +133,18 @@ class TSB:
         time.sleep(0.05)
         if not self.wait(self.CONFIRM):
             logging.warning("Confirmation not received")
+            return
+            
+        logging.info("Flash write successful")
         return
         
     def readFlash(self):
-        logging.info("Sending read flash command")
+        logging.debug("Sending read flash command...")
         self.send(self.CMD_RD_FLASH)
         
         data = bytes()
         nPages = self.flashSize / self.pageSize
+        logging.info("%d pages to receive" % nPages)
         
         for iPage in range(nPages):
             self.send(self.CONFIRM)
@@ -155,7 +158,9 @@ class TSB:
 
         if not self.wait(self.CONFIRM):
             logging.warning("Confirmation not received")
+            return None
 
+        logging.info("Flash write successful")
         return data
         
     def startApp(self):
@@ -198,12 +203,11 @@ def readHEX(stream):
     logging.debug('Read %d bytes from HEX file' % len(fdata))
     return fdata
 
-print args
-
 ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.5, write_timeout = 0.5, rtscts = False)
 tsb = TSB(ser)
 
 if args.connect != None:
+    logging.info("Connecting...")
     if not tsb.connect(args.connect):
         logging.error("Connect failed")
         sys.exit(1)
@@ -211,15 +215,15 @@ if args.connect != None:
         logging.info("Connected")
 
 if args.read:
-    logging.info("Reading from flash")
+    logging.info("Reading from flash...")
     data = tsb.readFlash()
     writeHEX(args.read, data)
     
 if args.write:
-    logging.info("Writing to flash")
+    logging.info("Writing to flash...")
     data = readHEX(args.write)    
     tsb.writeFlash(data)
 
 if args.run:
-    logging.info("Running application")
+    logging.info("Running application...")
     tsb.startApp()
