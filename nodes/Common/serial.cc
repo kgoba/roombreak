@@ -3,16 +3,16 @@
 
 #include "serial.h"
 
-FIFO<byte, 8> Serial::rxFIFO;
-FIFO<byte, 8> Serial::txFIFO;
+FIFO<byte, 32> Serial::rxFIFO;
+FIFO<byte, 32> Serial::txFIFO;
 byte Serial::_pinTXE;
 byte Serial::_pinRXD;
 
-void Serial::setup(int baudrate, byte pinTXE, byte pinRXD) {
+void Serial::setup(uint32_t baudrate, byte pinTXE, byte pinRXD) {
     _pinTXE = pinTXE;
     _pinRXD = pinRXD;
 
-    int val_UBRR0 = (((F_CPU) + 8UL * (baudrate)) / (16UL * (baudrate)) -1UL);
+    int val_UBRR0 = (F_CPU + 8UL * baudrate) / (16UL * baudrate) - 1;
     UBRR0 = val_UBRR0;
 
     bool use2x = false;
@@ -24,14 +24,28 @@ void Serial::setup(int baudrate, byte pinTXE, byte pinRXD) {
     }
     
     UCSR0C = bit_mask2(UCSZ01, UCSZ00); /* 8-bit data */
+    pinMode(pinTXE, OUTPUT);
+    pinMode(pinRXD, OUTPUT);
 }
 
 void Serial::enable() {
-    UCSR0B = bit_mask3(RXEN0, TXEN0, RXCIE0);   /* Enable RX and TX */
+    UCSR0B = bit_mask4(RXEN0, TXEN0, RXCIE0, TXCIE0);   /* Enable RX and TX */
 }
 
 void Serial::disable() {
     UCSR0B = 0;
+}
+
+void Serial::print(const char * str) {
+  while (*str) {
+    putChar(*str++);
+  }
+}
+
+void Serial::println(const char * str) {
+  print(str);
+  putChar('\r');
+  putChar('\n');
 }
 
 void Serial::putChar(char c) {
@@ -68,11 +82,11 @@ ISR(USART_RX_vect) {
 }
 
 ISR(USART_UDRE_vect) {
-    byte b = Serial::txFIFO.pop();
-    UDR0 = b;
-    if (Serial::txFIFO.empty()) {
-        bit_clear(UCSR0B, UDRIE0);
-    }
+  byte b = Serial::txFIFO.pop();
+  UDR0 = b;    
+  if (Serial::txFIFO.empty()) {
+    bit_clear(UCSR0B, UDRIE0);
+  }
 }
 
 ISR(USART_TX_vect) {

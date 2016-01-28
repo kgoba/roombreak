@@ -77,18 +77,26 @@ PinState digitalRead(byte pin)
   return ((*pPort) & mask) ? HIGH : LOW;
 }
 
+void analogSetup()
+{
+  
+}
+
+void analogEnable()
+{
+  bit_set(ADCSRA, ADEN);
+}
+
 void analogReference()
 {
-  ADMUX = (ADMUX & 0b00001111) | (1 << REFS0);
+  ADMUX = (ADMUX & 0b00001111) | bit_mask1(REFS0);
 }
 
 word analogRead(byte pin)
 {
   ADMUX = (ADMUX & 0b11110000) | (pin & 0b00001111);
-  ADCSRA |= (1 << ADSC);
+  bit_set(ADCSRA, ADSC);
   
-  while (ADCSRA & (1 << ADSC)) {
-    
-  }
+  while (bit_check(ADCSRA, ADSC)) {}
   return ADC;
 }

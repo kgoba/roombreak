@@ -2,17 +2,19 @@
 
 #include "config.h"
 #include <Common/util.h>
+#include <Common/ws2308s.h>
 
 
 class AudioPlayer {
 public:
-  AudioPlayer(byte pin0, byte pin1, byte pin2) 
-    : _pin0(pin0), _pin1(pin1), _pin2(pin2) {}
+  AudioPlayer(WS2308S &expander, byte pin0, byte pin1, byte pin2) 
+    : _expander(expander), _pin0(pin0), _pin1(pin1), _pin2(pin2) {}
   
   void setup();
   void play(byte id);
 private:
   byte _pin0, _pin1, _pin2;
+  WS2308S &_expander;
 };
 
 
@@ -28,7 +30,8 @@ struct PLineConfig
 
 class PLine {
 public:
-  PLine(AudioPlayer &player, const PLineConfig &config) : _player(player), _config(config) 
+  PLine(AudioPlayer &player, const PLineConfig &config) 
+    : _player(player), _config(config), _state(OPEN)
   {}
   
   enum State {
@@ -40,13 +43,16 @@ public:
   };
 
   void setTone(ToneType type);
+  void playCustom(byte id);
   void setRing(bool ringing);
   State getState();
+  void update();
   
 private:
   bool        _ringing;
   AudioPlayer _player;
   PLineConfig _config;
   word        _senseAvg;
+  State       _state;
 };
 

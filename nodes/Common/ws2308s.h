@@ -1,3 +1,5 @@
+#pragma once
+
 #include "util.h"
 
 class WS2308S {

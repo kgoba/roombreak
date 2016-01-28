@@ -14,7 +14,7 @@ struct FIFO {
     bool push(T b) {
         if (count == N) return false;
         byte tail = head + count;
-        if (tail >= N) tail = 0;
+        if (tail >= N) tail -= N;
         buffer[tail] = b;
         count++;
         return true;
@@ -24,7 +24,7 @@ struct FIFO {
         if (count == 0) return 0;
         T b = buffer[head];
         head++;
-        if (head >= N) head = 0;
+        if (head == N) head = 0;
         count--;
         return b;
     }
