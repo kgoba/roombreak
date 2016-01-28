@@ -20,7 +20,7 @@ $(TARGET).hex: $(TARGET).elf
 $(TARGET).lst: $(TARGET).elf
 	$(OBJDUMP) -h -S $(TARGET).elf >$(TARGET).lst
 
-$(TARGET).elf: $(OBJ)
+$(TARGET).elf: $(OBJ) ../Common/libcommon.a
 	$(LD) -o $@ $(OBJ) $(LFLAGS) $(LIBS)
 	$(SIZE) $@
 

@@ -1,8 +1,6 @@
 #pragma once
-#include <stdint.h>
 
-typedef uint8_t   byte;
-typedef uint16_t  word;
+#include "types.h"
 
 #define bit_set(var, bit)       var |= (1 << bit)
 #define bit_clear(var, bit)     var &= ~(1 << bit)
