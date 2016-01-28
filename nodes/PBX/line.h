@@ -42,6 +42,7 @@ public:
     TONE_OFF, TONE_DIAL, TONE_CALL, TONE_BUSY
   };
 
+  void setup();
   void setTone(ToneType type);
   void playCustom(byte id);
   void setRing(bool ringing);

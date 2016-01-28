@@ -46,6 +46,7 @@ void setup()
 
   ioExpander.setup();
   player1.setup();
+  line1.setup();
   serial.setup(38400, 2, 3);
   serial.enable();
   //player2.setup();
@@ -56,6 +57,7 @@ void setup()
   bit_set(ADCSRA, ADEN);
   analogReference();
   
+  pinMode(TALK_PIN, OUTPUT);
   digitalWrite(TALK_PIN, HIGH);
 }
 

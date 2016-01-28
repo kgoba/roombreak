@@ -17,6 +17,10 @@ void AudioPlayer::setup() {
   play(0);
 }
 
+void PLine::setup() {
+  pinMode(_config.pinRing, OUTPUT);
+}
+
 void PLine::setTone(ToneType type) {
   switch (type) {
     case TONE_OFF:
