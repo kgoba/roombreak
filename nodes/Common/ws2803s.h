@@ -2,10 +2,10 @@
 
 #include "util.h"
 
-class WS2308S {
+class WS2803S {
 public:
-  WS2308S(byte sdaPin, byte clkPin, byte nChips = 1);
-  ~WS2308S();
+  WS2803S(byte sdaPin, byte clkPin, byte nChips = 1);
+  ~WS2803S();
 
   void setup();
   void set(byte index, byte value);

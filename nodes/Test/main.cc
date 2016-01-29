@@ -11,8 +11,8 @@ const byte clkPin2 = 2;
 
 //Serial serial;
 
-WS2308S driver1(sdaPin1, clkPin1, 3);
-WS2308S driver2(sdaPin2, clkPin2, 2);
+WS2803S driver1(sdaPin1, clkPin1, 3);
+WS2803S driver2(sdaPin2, clkPin2, 2);
 
 void setAll(byte duty);
 

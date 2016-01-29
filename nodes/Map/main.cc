@@ -1,65 +1,59 @@
 #include <Common/util.h>
 
+#include <avr/interrupt.h>
 #include <util/delay.h>
+#include <stdio.h>
 
-#include "bombled.h"
+#include "task.h"
 
-class BombTask {
-public:
-  BombTask();  
-  void setup();
-  
-  void update();
-  void minusSecond();
-    
-private:
-  BombLED _display;
+/*
 
-  byte    _minutes;
-  byte    _seconds;
-};
+Hardware:
+- Keypad (4x4)
+- 1 izeja buzzerim
+- 2xWS2803 LED (36 gab.)
 
-BombTask::BombTask()
-{
-  _minutes = 8;
-  _seconds = 48;
-}
+Uzdevums:
 
-void BombTask::setup()
-{
-  _display.setup();
-}
+Savadīt 4 biļetes pareizā secībā. 
+Biļetes nr. ir 4 simboli, ko ievada ar keypad. Nospiežot pogu, ir skaņas indikācija.
+Pēc katras pareizās biļetes ievadīšanas atskan skaņas indikācija un iedegas noteikti LED.
+Ievadot jebko nepareizu, atgriežas sākuma stāvoklī.
+Pēc 4 pareizu biļešu ievadīšanas atskan skaņas indikācija un uzdevums ir atrisināts.
 
-void BombTask::update()
-{
-  _display.setDigits(_minutes / 10, _minutes % 10, _seconds / 10, _seconds % 10, 255);
-  _display.update();
-}
+3 skaņas indikācijas:
+1) poga nospiesta
+2) biļetes numurs ievadīts
+3) uzdevums atrisināts
 
-void BombTask::minusSecond()
-{
-  if (_seconds > 0) {
-    _seconds--;
-    return;
-  }
-  if (_minutes > 0) {
-    _seconds = 59;
-    _minutes--;
-  }
-}
+Uzdevuma konfigurācija:
+- 1. biļetes maršruta LED saraksts (5 baiti)
+- 2. biļetes maršruta LED saraksts (5 baiti)
+- 3. biļetes maršruta LED saraksts (5 baiti)
+- 4. biļetes maršruta LED saraksts (5 baiti)
+- 1. biļetes numurs (4 baiti)
+- 2. biļetes numurs (4 baiti)
+- 3. biļetes numurs (4 baiti)
+- 4. biļetes numurs (4 baiti)
 
+ */
 
-BombTask task;
+Task task;
 
 void setup() {
+  Serial::setup(38400, 2, 3);
+  Serial::enable();
+  
   task.setup();
-  _delay_ms(1000);
+
+  sei();
+
+  Serial::println("Setup done");
 }
 
 void loop() {
-  task.update();
-  task.minusSecond();
-  _delay_ms(100);
+  task.loop();
+  _delay_ms(50);
 }
 
 int main()
@@ -71,4 +65,3 @@ int main()
   }
   return 0;
 }
-

@@ -1,5 +1,5 @@
 #include <Common/util.h>
-#include <Common/ws2308s.h>
+#include <Common/ws2803s.h>
 
 class BombLED {
 public:
@@ -16,7 +16,7 @@ public:
   void update();
 
 private:
-  WS2308S   _driver;
+  WS2803S   _driver;
   static const byte _onesmap[];
   static const byte _tensmap[];
   static const byte _ledmap[];

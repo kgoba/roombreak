@@ -6,13 +6,13 @@
 
 #include "config.h"
 #include <Common/util.h>
-#include <Common/ws2308s.h>
+#include <Common/ws2803s.h>
 #include <Common/serial.h>
 
 #include "line.h"
 #include "user.h"
 
-WS2308S ioExpander(IO_SDA, IO_CLK);
+WS2803S ioExpander(IO_SDA, IO_CLK);
 AudioPlayer player1(ioExpander, 15, 14, 13);
 //AudioPlayer player2(ioExpander, 9, 10, 11);
 //AudioPlayer player3(ioExpander, 4, 5, 6);

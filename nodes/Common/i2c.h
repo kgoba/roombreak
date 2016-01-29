@@ -16,6 +16,17 @@ enum {
   I2C_R
 };
 
+/*
+struct I2CMessage {
+  byte *data;
+  byte length;
+  byte type;
+};
+*/
+
 void I2CSetup(word rate);
 void I2CEnable();
 void I2CDisable();
+
+byte I2CWriteBytes(byte address, const byte *data, byte count, byte noStop = 0);
+byte I2CReadBytes(byte address, byte *data, byte count, byte noStop = 0);

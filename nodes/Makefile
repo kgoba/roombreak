@@ -1,4 +1,4 @@
-SUBDIRS = Common Bomb PBX
+SUBDIRS = Common Bomb PBX P2K Map
 SUBCLEAN = $(addsuffix .clean, $(SUBDIRS))
 
 .PHONY: all $(SUBDIRS) clean $(SUBCLEAN)
