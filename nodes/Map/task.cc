@@ -45,6 +45,7 @@ void processKey(word keycode) {
 }
 
 void Task::setup() {
+  serial.setup(19200, 2, 3);
   leds.setup();
   keypad.setup();
   
