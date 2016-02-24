@@ -7,12 +7,14 @@ FIFO<byte, 32> Serial::rxFIFO;
 FIFO<byte, 32> Serial::txFIFO;
 byte Serial::_pinTXE;
 byte Serial::_pinRXD;
+uint32_t Serial::_baudrate;
 
 void Serial::setup(uint32_t baudrate, byte pinTXE, byte pinRXD) {
     _pinTXE = pinTXE;
     _pinRXD = pinRXD;
+    _baudrate = baudrate;
 
-    int val_UBRR0 = (F_CPU + 8UL * baudrate) / (16UL * baudrate) - 1;
+    word val_UBRR0 = (F_CPU + 8UL * baudrate) / (16UL * baudrate) - 1;
     UBRR0 = val_UBRR0;
 
     bool use2x = false;
@@ -34,6 +36,10 @@ void Serial::enable() {
 
 void Serial::disable() {
     UCSR0B = 0;
+}
+
+uint32_t Serial::getBaudrate() {
+  return _baudrate;
 }
 
 void Serial::print(const char * str) {

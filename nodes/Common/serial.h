@@ -18,12 +18,16 @@ public:
 
     static byte pendingIn();
     static byte pendingOut();
-        
+    
+    static uint32_t getBaudrate();
+    
     static FIFO<byte, 32> rxFIFO;
     static FIFO<byte, 32> txFIFO;
     
     static byte _pinTXE;
     static byte _pinRXD;
+    
+    static uint32_t _baudrate;
 };
 
 /*
