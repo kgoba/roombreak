@@ -8,9 +8,7 @@ WS2803S::WS2803S(byte sdaPin, byte clkPin, byte nChips)
   _clkPin = clkPin;
   _nPins = 18 * nChips;
   _pwmData = (byte *)malloc(_nPins * sizeof(byte));
-  for (byte i = 0; i < _nPins; i++) 
-    _pwmData[i] = 0;
-  
+  clear();
   update();
 }
 
@@ -29,6 +27,11 @@ void WS2803S::set(byte index, byte value)
 {
   if (index < _nPins)
     _pwmData[index] = value;
+}
+
+void WS2803S::clear() {
+  for (byte i = 0; i < _nPins; i++) 
+    _pwmData[i] = 0;
 }
 
 void WS2803S::update() {

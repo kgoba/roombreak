@@ -23,13 +23,11 @@ PLineConfig config1 = {
 };
 PLine line1(player1, config1);
 
-/*
 PLineConfig config2 = { 
   .apinSense = SENSE2_PIN, .pinRing = RING2_PIN, 
   .trackDial = TRACK_DIAL, .trackCall = TRACK_CALL, .trackBusy = TRACK_BUSY 
 };
 PLine line2(player1, config2);
-*/
 
 PUser user1(line1);
 //PUser user2(line2);
@@ -43,11 +41,11 @@ void setup()
   ADCSRA = (1 << ADEN) | (1 << ADPS2);      // prescaler 16
 
   sei();
-
   ioExpander.setup();
   player1.setup();
   line1.setup();
-  serial.setup(38400, 2, 3);
+  line2.setup();
+  serial.setup(19200, 2, 3);
   serial.enable();
   //player2.setup();
   //player3.setup();
@@ -58,7 +56,6 @@ void setup()
   analogReference();
   
   pinMode(TALK_PIN, OUTPUT);
-  digitalWrite(TALK_PIN, HIGH);
 }
 
 void loop()
@@ -80,16 +77,14 @@ void loop()
   sprintf(buf, "%d %d (%d)", aval, avg >> 6, avg);
   serial.println(buf);
   */
-}
-
-int main()
-{
-  setup();
-  while (true) {
-    loop();
+  
+  line2.update();
+  if (line2.getState() == PLine::CLOSED) {
+    digitalWrite(TALK_PIN, HIGH);
   }
-  return 0;
+  else {
+    digitalWrite(TALK_PIN, LOW);
+  }
 }
 
 extern "C" void __cxa_pure_virtual() { while (1); }
-

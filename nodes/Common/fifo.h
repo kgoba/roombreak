@@ -3,11 +3,41 @@
 
 #include "util.h"
 
+#define FIFO(name, type, size) \
+                               \
+static struct {                \
+  type buffer[size];           \
+  byte head;                   \
+  byte count;                  \
+} name;
+
+#define FIFO_SIZE(name)     ARRAY_SIZE(name.buffer)
+#define FIFO_EMPTY(name)    (name.count == 0)
+#define FIFO_FULL(name)     (name.count == FIFO_SIZE(name))
+#define FIFO_COUNT(name)    (name.count)
+
+#define FIFO_PUSH(name, b)     \
+if (!FIFO_FULL(name)) {         \
+  byte tail = name.head + name.count;   \
+  if (tail == FIFO_SIZE(name)) tail = 0;   \
+  name.buffer[tail] = b;    \
+  name.count++;             \
+}
+
+#define FIFO_HEAD(name)      ((name.count > 0) ? name.buffer[name.head] : 0)
+#define FIFO_POP(name)      \
+if (name.count > 0) {       \
+  if (++name.head == FIFO_SIZE(name)) name.head = 0;      \
+  name.count--;             \
+}
+
+
+/*
 template<typename T, byte N>
 struct FIFO {
     T buffer[N];
     byte head;
-    byte count;
+    volatile byte count;
     
     FIFO() : head(0), count(0) { }
     
@@ -33,7 +63,7 @@ struct FIFO {
         return (count == 0);
     }
     
-    bool full() const {
+    bool full() {
         return (count == N);
     }
     
@@ -41,3 +71,4 @@ struct FIFO {
         return count;
     }
 };
+*/

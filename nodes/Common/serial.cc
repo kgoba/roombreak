@@ -3,8 +3,12 @@
 
 #include "serial.h"
 
-FIFO<byte, 32> Serial::rxFIFO;
-FIFO<byte, 32> Serial::txFIFO;
+//volatile static FIFO<byte, 32> rxFIFO;
+//volatile static FIFO<byte, 32> txFIFO;
+
+volatile FIFO(rxFIFO, byte, 32);
+volatile FIFO(txFIFO, byte, 32);
+
 byte Serial::_pinTXE;
 byte Serial::_pinRXD;
 uint32_t Serial::_baudrate;
@@ -48,54 +52,93 @@ void Serial::print(const char * str) {
   }
 }
 
+void Serial::print(byte b, Format format) {
+  switch (format) {
+    case DEC:
+    {
+      byte d0 = b % 10;
+      byte d1 = (b / 10) % 10;
+      byte d2 = (b / 100);
+      putChar('0' + d2);
+      putChar('0' + d1);
+      putChar('0' + d0);          
+    }
+    case HEX:
+    {
+      byte d0 = (b & 0x0F);
+      byte d1 = (b >> 4);
+      putChar(d1 + ((d1 > 9) ? ('A' - 10) : '0'));
+      putChar(d0 + ((d0 > 9) ? ('A' - 10) : '0'));
+    }
+  }
+}
+
 void Serial::println(const char * str) {
   print(str);
+  println();
+}
+
+void Serial::println() {
   putChar('\r');
   putChar('\n');
 }
 
 void Serial::putChar(char c) {
-    //loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
-    //UDR0 = c;
-    if (txFIFO.push(c)) {
-        if (!bit_check(UCSR0B, UDRIE0)) {
-            digitalWrite(_pinTXE, HIGH);
-            digitalWrite(_pinRXD, HIGH);
-            bit_set(UCSR0B, UDRIE0);
-        }
-    }
+  loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
+  digitalWrite(_pinTXE, HIGH);
+  digitalWrite(_pinRXD, HIGH);
+
+  UDR0 = c;
+  /*
+  while (FIFO_FULL(txFIFO)) {}
+  FIFO_PUSH(txFIFO, c);
+  if (!bit_check(UCSR0B, UDRIE0)) {
+      digitalWrite(_pinTXE, HIGH);
+      digitalWrite(_pinRXD, HIGH);
+      bit_set(UCSR0B, UDRIE0);
+  }
+  */
+  loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
+  digitalWrite(Serial::_pinTXE, LOW);
+  digitalWrite(Serial::_pinRXD, LOW);    
 }
 
 char Serial::getChar() {
-    //loop_until_bit_is_set(UCSR0A, RXC0); /* Wait until data exists. */
-    //return UDR0;
+  //loop_until_bit_is_set(UCSR0A, RXC0); /* Wait until data exists. */
+  //return UDR0;
 
-    //while (rxFIFO.empty()) {}    
-    return rxFIFO.pop();
+  //while (rxFIFO.empty()) {}
+  char c = FIFO_HEAD(rxFIFO);
+  FIFO_POP(rxFIFO);
+  return c;
 }
 
 byte Serial::pendingIn() {
-    return rxFIFO.available();
+  return FIFO_COUNT(rxFIFO);
 }
 
 byte Serial::pendingOut() {
-    return txFIFO.available();
+  //return txFIFO.available();
+  return 0;
 }
 
 ISR(USART_RX_vect) {
-    byte b = UDR0;
-    Serial::rxFIFO.push(b);
+  byte b = UDR0;
+  //rxFIFO.push(b);
+  FIFO_PUSH(rxFIFO, b);
 }
 
 ISR(USART_UDRE_vect) {
+  /*
   byte b = Serial::txFIFO.pop();
   UDR0 = b;    
-  if (Serial::txFIFO.empty()) {
+  if (txFIFO.empty()) {
     bit_clear(UCSR0B, UDRIE0);
   }
+  */
 }
 
 ISR(USART_TX_vect) {
-    digitalWrite(Serial::_pinTXE, LOW);
-    digitalWrite(Serial::_pinRXD, LOW);    
+  digitalWrite(Serial::_pinTXE, LOW);
+  digitalWrite(Serial::_pinRXD, LOW);    
 }

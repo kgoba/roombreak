@@ -356,12 +356,20 @@ void ModBus::writeRegs(byte code, word address, word count, byte nBytes) {
 
 */
 
-#define CRC_WIDTH   8
+#define CRC_TYPE    byte
+
+#define CRC_WIDTH   (8 * sizeof(CRC_TYPE))
 #define CRC_TOPBIT  (1 << (CRC_WIDTH - 1))
-#define CRC_POLYNOMIAL  0x62
+#define CRC_POLYNOMIAL  0x21
 
 byte                NewBus::_address;
 NewBus::callback_t  NewBus::_callback;
+word   NewBus::_timeout;
+word   NewBus::_timer;
+byte * NewBus::_argv;
+byte   NewBus::_argc;
+byte   NewBus::_crc;
+byte   NewBus::_crcTable[256];
 
 void NewBus::setup(byte address, callback_t callback, byte *argv, byte argc, word timeout)
 {
@@ -382,7 +390,15 @@ void NewBus::setup(byte address, callback_t callback, byte *argv, byte argc, wor
         rem = (rem << 1);
     }
     _crcTable[div] = rem;
+    /*
+    Serial::print(rem, Serial::HEX);
+    if ((div & 0x0F) == 0x0F)
+      Serial::println();
+    else 
+      Serial::print(", ");
+    */
   } while (++div);
+  Serial::println();
 }
 
 byte NewBus::readByte(bool doCRC) {
@@ -403,7 +419,7 @@ byte NewBus::readByte(bool doCRC) {
     byte idx = b ^ (_crc >> (CRC_WIDTH - 8));
     _crc = _crcTable[idx] /* ^ (_crc << 8) */ ;
   }
-  
+
   return b;
 }
 
@@ -452,7 +468,7 @@ void NewBus::poll()
   byte status = _callback(cmd, idx, &nResults);
   
   if (address = 0xFF) return;     // in case of broadcast, do not reply
-  
+
   _crc = 0xFF;
   sendByte(_address);
   sendByte(cmd);

@@ -35,11 +35,11 @@ MCP23017::MCP23017(byte address) {
   _address = address | MCP23017_ADDRESS;
 }
 
-void MCP23017::setup(word mode) {
+void MCP23017::setup(word iomode, word pullup) {
   I2CSetup(I2C_RATE(100000));
-  I2CEnable();
-  
-  setMode(mode);
+  I2CEnable();  
+  setIOMode(iomode);
+  setPullup(pullup);
 }
 
 byte MCP23017::readA() {
@@ -72,11 +72,18 @@ void MCP23017::write(word value) {
   writeRegister(MCP23017_GPIOB, b);  
 }
 
-void MCP23017::setMode(word mode) {
+void MCP23017::setIOMode(word mode) {
   byte a = mode & 0xFF;
   byte b = mode >> 8;
 	writeRegister(MCP23017_IODIRA, a);
 	writeRegister(MCP23017_IODIRB, b);
+}
+
+void MCP23017::setPullup(word mode) {
+  byte a = mode & 0xFF;
+  byte b = mode >> 8;
+	writeRegister(MCP23017_GPPUA, a);
+	writeRegister(MCP23017_GPPUB, b);
 }
 
 byte MCP23017::readRegister(byte addr) {

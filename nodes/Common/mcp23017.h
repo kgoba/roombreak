@@ -6,7 +6,7 @@ class MCP23017 {
 public:
   MCP23017(byte address = 0);
   
-  void setup(word mode = 0xFFFF);
+  void setup(word iomode = 0xFFFF, word pullups = 0x0000);
   
   byte readA();
   byte readB();
@@ -16,7 +16,8 @@ public:
   void writeB(byte value);
   void write(word value);
 
-  void setMode(word mode);
+  void setIOMode(word mode);      // *1 - input, 0 - output
+  void setPullup(word mode);      // 1 - enabled, *0 - disabled
   
 private:
   byte    _address;

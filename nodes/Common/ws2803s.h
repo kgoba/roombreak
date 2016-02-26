@@ -9,6 +9,7 @@ public:
 
   void setup();
   void set(byte index, byte value);
+  void clear();
 
   void update();
 

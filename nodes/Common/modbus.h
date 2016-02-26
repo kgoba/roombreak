@@ -49,11 +49,13 @@ private:
 
 */
 
+#define BUS_DEFAULT_TIMEOUT   20
+
 class NewBus {
 public:
   typedef byte (* callback_t) (byte cmd, byte nParams, byte *nResults);
 
-  static void setup(byte address, callback_t callback, byte *argv, byte argc, word timeout);
+  static void setup(byte address, callback_t callback, byte *argv, byte argc, word timeout = BUS_DEFAULT_TIMEOUT);
   static void poll();
   
 private:
