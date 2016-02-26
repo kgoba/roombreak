@@ -1,5 +1,6 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 #include <avr/io.h>
 #include <util/delay.h>
 
@@ -463,6 +464,11 @@ void NewBus::poll()
   // check CRC
   if (crc != _crc) return;
 
+  // check if need to reboot
+  if (cmd == 0xFF) {
+    wdt_enable(WDTO_15MS);
+    for(;;) {}
+  }
   // call callback
   byte nResults = 0;
   byte status = _callback(cmd, idx, &nResults);

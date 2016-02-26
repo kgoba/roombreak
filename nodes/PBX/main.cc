@@ -49,7 +49,7 @@ void setup()
   serial.enable();
   //player2.setup();
   //player3.setup();
-  serial.println("Setup done");
+  //serial.println("Setup done");
   
   ADCSRA = bit_mask2(ADPS2, ADPS0);
   bit_set(ADCSRA, ADEN);

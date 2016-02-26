@@ -1,6 +1,7 @@
 #include <Common/util.h>
 #include <Common/serial.h>
 #include <Common/modbus.h>
+#include <Common/config.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
