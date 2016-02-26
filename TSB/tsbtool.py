@@ -18,6 +18,7 @@ parser.add_argument('-c', '--connect', help = 'Connect (with optional password)'
 parser.add_argument('-r', '--read', help = 'Read into file (HEX)', type = argparse.FileType('w'))
 parser.add_argument('-w', '--write', help = 'Write from file (HEX)', type = argparse.FileType('r'))
 parser.add_argument('-t', '--type', help = 'Access type', choices = ['flash', 'EEPROM'], default = 'flash')
+parser.add_argument('-p', '--password', help = 'Change password', nargs = '?', const = '', metavar = 'NEWPASSWORD')
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -42,21 +43,17 @@ class TSB:
     def connect(self, password):
         for i in range(self.N_RETRIES):
             self.send('@@@%s' % password)
-            info = self.receive(self.INFO_SIZE)        
+            info = self.readInfo()
             if info:
-                logging.debug("Got %d bytes : [%s]" % (len(info), info.encode('hex')))
-                if len(info) == self.INFO_SIZE:
-                    info = struct.unpack('<3sHBBBBBHHH', info)
-                    #print info
-                    if info[0] == 'TSB' or info[0] == '\xd5SB':
-                        self.pageSize = 2 * info[6]
-                        self.flashSize = 2 * info[7]
-                        self.eepromSize = 2 * info[8]
-                        logging.info("Page size %d, flash size %d, EEPROM size %d" % (self.pageSize, self.flashSize, self.eepromSize))
-                        self.connected = True
-                
-                        if self.wait(self.CONFIRM):
-                            return True
+                if info[0] == 'TSB' or info[0] == '\xd5SB':
+                    self.pageSize = 2 * info[6]
+                    self.flashSize = 2 * info[7]
+                    self.eepromSize = 2 * info[8]
+                    logging.info("Page size %d, flash size %d, EEPROM size %d" % (self.pageSize, self.flashSize, self.eepromSize))
+                    self.connected = True
+            
+                    if self.wait(self.CONFIRM):
+                        return True
 
             logging.warn("Timeout; retrying...")
             time.sleep(1)
@@ -64,6 +61,13 @@ class TSB:
         logging.error("Bootloader signature not found")
         return False
         
+    def readInfo(self):
+        info = self.receive(self.INFO_SIZE)        
+        if info:
+            logging.debug("Got %d bytes : [%s]" % (len(info), info.encode('hex')))
+            info = struct.unpack('<3sHBBBBBHHH', info)
+        return info
+
     def send(self, data):
         #self.ser.rts = True
         self.ser.write(data)
@@ -166,6 +170,35 @@ class TSB:
     def startApp(self):
         self.send(self.CMD_RUN)
         return
+        
+    def setPassword(self, newPassword):
+        self.send(self.CMD_RD_UDATA)
+        userData = bytearray(self.receive(self.pageSize))
+        if not self.wait(self.CONFIRM):
+            logging.warning("Confirmation not received")
+            return None
+        for i in range(0, self.pageSize - 3):
+            if i < len(newPassword):
+                userData[3 + i] = newPassword[i]
+            else:
+                userData[3 + i] = 0xFF
+        self.send(self.CMD_WR_UDATA)
+        if not self.wait(self.REQUEST):
+            logging.error("Data request not received, aborting")
+            return
+        logging.debug("Writing user data")
+        self.send(self.CONFIRM)
+        self.send(userData)
+        userData2 = bytearray(self.receive(self.pageSize))
+        if not self.wait(self.CONFIRM):
+            logging.warning("Confirmation not received")
+            return None        
+        if userData != userData2:
+            logging.warning("Verification failed")
+            logging.debug("Sent %d bytes : [%s]" % (len(userData), str(userData).encode('hex')))
+            logging.debug("Got %d bytes  : [%s]" % (len(userData2), str(userData2).encode('hex')))
+            return None        
+        return
 
 def hexReader(stream):
     for line in stream:
@@ -223,6 +256,10 @@ if args.write:
     logging.info("Writing to flash...")
     data = readHEX(args.write)    
     tsb.writeFlash(data)
+
+if args.password:
+    logging.info("Setting password...")
+    tsb.setPassword(args.password)
 
 if args.run:
     logging.info("Running application...")
