@@ -51,18 +51,29 @@ void setup() {
 }
 
 void loop() {
+  static byte led = 0;
   static bool phase = true;
-  if (bit_check(gFlags, FLAG_SECOND)) {
-    bit_clear(gFlags, FLAG_SECOND);
-    for (byte idx = 0; idx < 10; idx++) {
-      task.setLED(idx, phase);      
+  
+  if (bit_check(gFlags, FLAG_BLINK))
+  {
+    bit_clear(gFlags, FLAG_BLINK);
+    
+    for (byte idx = 0; idx < 5; idx++) {
+      byte state = task.getButtons(idx);
+      task.setLED(idx, (state & 0x0F) != 0);
+      task.setLED(idx + 5, (state & 0xF0) != 0);
     }
-    phase != phase;
+    //task.setLED(led, phase);      
+    if (++led >= 10) {
+      led = 0;
+      phase = !phase;
+    }
   }
+  
   task.update();
 
   bus.poll();
-  _delay_ms(100);
+  _delay_ms(2);
 }
 
 ISR(TIMER0_OVF_vect) {
@@ -76,8 +87,8 @@ ISR(TIMER0_OVF_vect) {
     millis -= 1000;
     bit_set(gFlags, FLAG_SECOND);
   }
-  if (millis2 >= 500) {
-    millis2 -= 500;
+  if (millis2 >= 200) {
+    millis2 -= 200;
     bit_set(gFlags, FLAG_BLINK);
   }
 }

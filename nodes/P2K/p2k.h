@@ -8,6 +8,7 @@ public:
     
   static void setup();
   static void update();
+  static void clear();
   
   static void enableLED(byte idx);
   static void disableLED(byte idx);
@@ -19,4 +20,5 @@ private:
   static MCP23017    _driver;
   static byte        _buttons[N_ROWS];
   static byte        _leds[N_ROWS];
+  static byte        _scanRow;
 };

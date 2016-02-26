@@ -20,7 +20,7 @@ void I2CDisable() {
 
 byte I2CStart() {
   TWCR = bit_mask3(TWINT, TWSTA, TWEN);
-  while (!bit_check(TWCR, TWINT));
+  while (!bit_check(TWCR, TWINT)) {}
   return TW_STATUS;
 }
 
@@ -50,26 +50,38 @@ byte I2CWriteBytes(byte address, const byte *data, byte count, byte noStop) {
   byte status;
   byte result = I2C_OK;
 
-  status = I2CStart();
-  if (status != TW_START && status != TW_REP_START) {
-    return I2C_ERR_NO_START;
-  }
+  byte nTries = 3;
+  while (nTries > 0) 
+  {
+    status = I2CStart();
+    if (status != TW_START && status != TW_REP_START) {
+      nTries--;
+      if (nTries == 0)
+        return I2C_ERR_NO_START;
+      continue;
+    }
 
-  status = I2CSend(address | TW_WRITE);
-  if (status != TW_MT_SLA_ACK) {
-    result = I2C_ERR_NO_ACK;
-  }
-  else 
-  while (count--) {
-    status = I2CSend(*data);
+    status = I2CSend(address | TW_WRITE);
+    if (status != TW_MT_SLA_ACK) {
+      nTries--;
+      continue;
+    }
+    while (count--) {
+      status = I2CSend(*data);
+      if (status != TW_MT_DATA_ACK) {
+        result = I2C_ERR_NO_ACK;
+        break;
+      }
+      data++;
+    }
     if (status != TW_MT_DATA_ACK) {
       result = I2C_ERR_NO_ACK;
-      break;
+      continue;
     }
-    data++;
+    result = I2C_OK;
+    break;
   }
-
-  if (noStop) {
+  if (!noStop) {
     I2CStop();    
   }
   return result;
@@ -98,7 +110,7 @@ byte I2CReadBytes(byte address, byte *data, byte count, byte noStop) {
     data++;
   }
 
-  if (noStop) {
+  if (!noStop) {
     I2CStop();    
   }
   return result;
