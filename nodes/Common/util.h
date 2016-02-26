@@ -20,6 +20,9 @@ enum PinMode {
   INPUT, OUTPUT
 };
 
+#define pinWrite    digitalWrite
+#define pinRead     digitalRead
+
 void pinMode(byte pin, PinMode mode);
 void digitalWrite(byte pin, PinState state);
 PinState digitalRead(byte pin);
