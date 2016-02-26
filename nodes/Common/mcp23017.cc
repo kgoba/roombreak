@@ -32,7 +32,7 @@
 #define MCP23017_INT_ERR 255
 
 MCP23017::MCP23017(byte address) {
-  _address = address | MCP23017_ADDRESS;
+  _address = (address | MCP23017_ADDRESS) << 1;
 }
 
 void MCP23017::setup(word iomode, word pullup) {
@@ -53,8 +53,7 @@ byte MCP23017::readB() {
 word MCP23017::read() {
   byte a = readRegister(MCP23017_GPIOA);
   word b = readRegister(MCP23017_GPIOB);
-  b <<= 8;
-  return b | a;
+  return (b << 8) | a;
 }
 
 void MCP23017::writeA(byte value) {
