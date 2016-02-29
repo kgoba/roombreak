@@ -19,7 +19,7 @@ static struct {                \
 #define FIFO_PUSH(name, b)     \
 if (!FIFO_FULL(name)) {         \
   byte tail = name.head + name.count;   \
-  if (tail == FIFO_SIZE(name)) tail = 0;   \
+  if (tail >= FIFO_SIZE(name)) tail -= FIFO_SIZE(name);   \
   name.buffer[tail] = b;    \
   name.count++;             \
 }
@@ -27,7 +27,8 @@ if (!FIFO_FULL(name)) {         \
 #define FIFO_HEAD(name)      ((name.count > 0) ? name.buffer[name.head] : 0)
 #define FIFO_POP(name)      \
 if (name.count > 0) {       \
-  if (++name.head == FIFO_SIZE(name)) name.head = 0;      \
+  name.head++;              \
+  if (name.head == FIFO_SIZE(name)) name.head = 0;      \
   name.count--;             \
 }
 

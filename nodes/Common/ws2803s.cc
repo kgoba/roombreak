@@ -8,8 +8,6 @@ WS2803S::WS2803S(byte sdaPin, byte clkPin, byte nChips)
   _clkPin = clkPin;
   _nPins = 18 * nChips;
   _pwmData = (byte *)malloc(_nPins * sizeof(byte));
-  clear();
-  update();
 }
 
 WS2803S::~WS2803S()
@@ -21,6 +19,8 @@ void WS2803S::setup()
 {
   pinMode(_sdaPin, OUTPUT);
   pinMode(_clkPin, OUTPUT);
+  clear();
+  update();
 }
 
 void WS2803S::set(byte index, byte value)

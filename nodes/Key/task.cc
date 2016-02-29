@@ -6,10 +6,6 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-
-#define BUS_ADDRESS     ADDRESS_KEY
-#define BUS_NPARAMS     4
-
 // internal timing frequency in Hz
 #define TICK_FREQ       125
 
@@ -17,12 +13,7 @@
 #define PIN_PWM         5
 #define PIN_SWITCH      6
 
-// servo PPM time in microseconds for 2 positions
-#define PPM_CLOSED_US   (1500 - 300)
-#define PPM_OPEN_US     (1500 + 200)
-
-// time to hold servo in a position
-#define HOLD_MS         1000
+using namespace KeyConfig;
 
 enum {
   FLAG_BUTTON,
@@ -98,9 +89,8 @@ void setup() {
 
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
-  //bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
 }
-
 
 void loop() {  
   if (!gTaskDone) {

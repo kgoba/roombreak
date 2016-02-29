@@ -4,6 +4,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
+#include "config.h"
 #include "serial.h"
 #include "modbus.h"
 
@@ -357,11 +358,8 @@ void ModBus::writeRegs(byte code, word address, word count, byte nBytes) {
 
 */
 
-#define CRC_TYPE    byte
-
 #define CRC_WIDTH   (8 * sizeof(CRC_TYPE))
 #define CRC_TOPBIT  (1 << (CRC_WIDTH - 1))
-#define CRC_POLYNOMIAL  0x21
 
 byte                NewBus::_address;
 NewBus::callback_t  NewBus::_callback;
@@ -369,8 +367,9 @@ word   NewBus::_timeout;
 word   NewBus::_timer;
 byte * NewBus::_argv;
 byte   NewBus::_argc;
-byte   NewBus::_crc;
-byte   NewBus::_crcTable[256];
+
+CRC_TYPE   NewBus::_crc;
+CRC_TYPE   NewBus::_crcTable[256];
 
 void NewBus::setup(byte address, callback_t callback, byte *argv, byte argc, word timeout)
 {
@@ -435,7 +434,17 @@ void NewBus::poll()
 {
   if (!Serial::pendingIn()) return;
   // initialize CRC
-  _crc = 0xFF;
+  _crc = CRC_INITIAL;
+
+  byte prefix1 = readByte();
+  if (!_timer) return;  
+  if (prefix1 != BUS_PREFIX1) return;
+  byte prefix2 = readByte();
+  if (!_timer) return;  
+  if (prefix2 != BUS_PREFIX2) return;
+  byte prefix3 = readByte();
+  if (!_timer) return;  
+  if (prefix3 != BUS_PREFIX3) return;
 
   byte address = readByte();      // first byte: address
   if (!_timer) return;  
@@ -460,22 +469,43 @@ void NewBus::poll()
   if (!_timer) return;
 
   // check address - receive also broadcast (0xFF)
-  if (address != _address && address != 0xFF) return;
+  if (address != _address && address != ADDRESS_ALL) return;
   // check CRC
   if (crc != _crc) return;
 
-  // check if need to reboot
-  if (cmd == 0xFF) {
-    wdt_enable(WDTO_15MS);
-    for(;;) {}
-  }
-  // call callback
-  byte nResults = 0;
-  byte status = _callback(cmd, idx, &nResults);
-  
-  if (address = 0xFF) return;     // in case of broadcast, do not reply
+  byte nResults;
+  byte status;
 
-  _crc = 0xFF;
+  switch (cmd) {
+    case CMD_REBOOT:
+    {
+      //cli();
+      wdt_enable(WDTO_60MS);
+      //for(;;) {}
+      nResults = 1;
+      _argv[0] = WDTCSR;
+      break;
+    }  
+    case CMD_ECHO:
+    {
+      nResults = nArgs;
+      break;
+    }
+    default:
+    {
+      // call callback
+      nResults = 0;
+      status = _callback(cmd, idx, &nResults);    
+      break;
+    }
+  }
+  
+  if (address == ADDRESS_ALL) return;     // in case of broadcast, do not reply
+
+  _crc = CRC_INITIAL;
+  sendByte(BUS_PREFIX1);
+  sendByte(BUS_PREFIX2);
+  sendByte(BUS_PREFIX3);
   sendByte(_address);
   sendByte(cmd);
   sendByte(nResults);

@@ -1,5 +1,6 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <util/delay.h>
 
 #include "serial.h"
 
@@ -35,7 +36,7 @@ void Serial::setup(uint32_t baudrate, byte pinTXE, byte pinRXD) {
 }
 
 void Serial::enable() {
-    UCSR0B = bit_mask4(RXEN0, TXEN0, RXCIE0, TXCIE0);   /* Enable RX and TX */
+    UCSR0B = bit_mask2(RXEN0, TXEN0) | bit_mask2(RXCIE0, TXCIE0);   /* Enable RX and TX */
 }
 
 void Serial::disable() {
@@ -84,23 +85,30 @@ void Serial::println() {
 }
 
 void Serial::putChar(char c) {
-  loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
+  /*
+  loop_until_bit_is_set(UCSR0A, UDRE0); // Wait until data register empty. 
   digitalWrite(_pinTXE, HIGH);
   digitalWrite(_pinRXD, HIGH);
-
+  _delay_us(10);
   UDR0 = c;
-  /*
+  */
+  
   while (FIFO_FULL(txFIFO)) {}
+  cli();
   FIFO_PUSH(txFIFO, c);
+  sei();
   if (!bit_check(UCSR0B, UDRIE0)) {
       digitalWrite(_pinTXE, HIGH);
       digitalWrite(_pinRXD, HIGH);
       bit_set(UCSR0B, UDRIE0);
   }
-  */
-  loop_until_bit_is_set(UCSR0A, UDRE0); /* Wait until data register empty. */
+  
+  /*
+  loop_until_bit_is_set(UCSR0A, UDRE0); // Wait until data register empty. 
+  _delay_us(10);
   digitalWrite(Serial::_pinTXE, LOW);
   digitalWrite(Serial::_pinRXD, LOW);    
+  */
 }
 
 char Serial::getChar() {
@@ -108,8 +116,10 @@ char Serial::getChar() {
   //return UDR0;
 
   //while (rxFIFO.empty()) {}
+  cli();
   char c = FIFO_HEAD(rxFIFO);
   FIFO_POP(rxFIFO);
+  sei();
   return c;
 }
 
@@ -119,23 +129,22 @@ byte Serial::pendingIn() {
 
 byte Serial::pendingOut() {
   //return txFIFO.available();
-  return 0;
+  return FIFO_COUNT(txFIFO);
+  //return 0;
 }
 
 ISR(USART_RX_vect) {
   byte b = UDR0;
-  //rxFIFO.push(b);
   FIFO_PUSH(rxFIFO, b);
 }
 
 ISR(USART_UDRE_vect) {
-  /*
-  byte b = Serial::txFIFO.pop();
-  UDR0 = b;    
-  if (txFIFO.empty()) {
+  byte b = FIFO_HEAD(txFIFO);
+  FIFO_POP(txFIFO);
+  UDR0 = b;
+  if (FIFO_EMPTY(txFIFO)) {
     bit_clear(UCSR0B, UDRIE0);
   }
-  */
 }
 
 ISR(USART_TX_vect) {

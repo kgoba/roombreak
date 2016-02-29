@@ -8,8 +8,7 @@
 
 #include "bombled.h"
 
-#define BUS_ADDRESS     ADDRESS_BOMB
-#define BUS_NPARAMS     4
+using namespace BombConfig;
 
 #define TICK_FREQ       125
 

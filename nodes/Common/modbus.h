@@ -51,6 +51,8 @@ private:
 
 #define BUS_DEFAULT_TIMEOUT   20
 
+#define CRC_TYPE    byte
+
 class NewBus {
 public:
   typedef byte (* callback_t) (byte cmd, byte nParams, byte *nResults);
@@ -65,8 +67,8 @@ private:
   static word   _timer;
   static byte * _argv;
   static byte   _argc;
-  static byte   _crc;
-  static byte   _crcTable[256];
+  static CRC_TYPE   _crc;
+  static CRC_TYPE   _crcTable[256];
   
   static byte readByte(bool doCRC = true);
   static void sendByte(byte b);
