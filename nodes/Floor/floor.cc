@@ -8,14 +8,29 @@
 
 using namespace FloorConfig;
 
+#define PIN_SENSE       19, 18, 17, 16, 15, 14, 7, 8, 10, 11
+
+// rfid
+// data 19, en 18, 
+// data 17, en 16
+// data 15, en 14
+// data 13, en 12
+// data 11, en  9
+// data  8, en  7
+// buzzer 5
+
+// valves
+// hall - a2, a1, a0
+// servo - 9
+
 // internal timing frequency in Hz
 #define TICK_FREQ       125
 
 // sensor pin numbers
-const byte PIN_SENSE[] = {};
+const byte kPinSense[] = { PIN_SENSE };
 
 // audio player track selection pin numbers starting from LSB
-const byte PIN_PLAYER[] = {};
+//const byte PIN_PLAYER[] = {};
 
 enum {
   FLAG_DONE
@@ -55,6 +70,7 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
   return 0;
 }
 
+/*
 void audioPlay(byte track) {
   byte mask = 1;
   for (byte idx = 0; idx < ARRAY_SIZE(PIN_PLAYER); idx++) {
@@ -62,6 +78,7 @@ void audioPlay(byte track) {
     mask <<= 1;
   }
 }
+*/
 
 void setup() {
   // Setup Timer2

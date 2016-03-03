@@ -1,5 +1,5 @@
 TARGET 	 = floor
-SRC 	 = task.cc
+SRC 	 = floor.cc
 
 include ../common.mk
 include ../avr.mk
