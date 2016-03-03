@@ -1,4 +1,4 @@
-SUBDIRS = Common Bomb PBX P2K Map Key Floor
+SUBDIRS = Common Bomb PBX P2K Map Key Floor RFID
 SUBCLEAN = $(addsuffix .clean, $(SUBDIRS))
 
 .PHONY: all $(SUBDIRS) clean $(SUBCLEAN)
