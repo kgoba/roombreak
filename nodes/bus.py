@@ -10,7 +10,7 @@ import sys
 CRC_POLYNOMIAL  = 0x21
 CRC_INITIAL     = 0xFF
 
-logging.basicConfig(level = logging.DEBUG)
+logging.basicConfig(level = logging.INFO)
 
 parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
@@ -19,6 +19,7 @@ parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)'
 parser.add_argument('-n', '--node', help = 'Node identifier', type=int)
 parser.add_argument('-R', '--reboot', help = 'Reboot', action = 'store_true', default = False)
 parser.add_argument('-e', '--echo', help = 'Ping node for echo', action = 'store_true', default = False)
+parser.add_argument('-r', '--repeat', help = 'Repeat N times', type = int, default = 1)
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -53,7 +54,7 @@ class CRC:
 class Bus:
     N_RETRIES       = 5
     CMD_ECHO        = 0x00
-    CMD_REBOOT      = 0xFF
+    CMD_REBOOT      = 0x7F
     PREFIX          = [0xAF, 0x6A, 0xDE]
     
     def __init__(self, serial, crc):
@@ -69,12 +70,24 @@ class Bus:
         if params: data += params
         data.append(self.crc.compute(data))
         return data
-        
+       
+    def check(self, data, recv):
+        if not recv or len(recv) < len(self.PREFIX) + 2:
+            return False
+        addr = data[len(self.PREFIX)]
+        if recv[len(self.PREFIX)] != addr:
+            return False
+        cmd = data[len(self.PREFIX) + 1]
+        if recv[len(self.PREFIX) + 1] != (cmd | 0x80):
+            return False
+        crc = self.crc.compute(recv[:-1])
+        return crc == recv[-1]
+
     def echo(self, address):
         data = self.packet(address, self.CMD_ECHO)
         self.send(data)
-        recv = self.receive(len(data))
-        if recv == data:
+        recv = self.receive(len(data), nRetries = 1)
+        if self.check(data, recv):
             logging.info("SUCCESS")
         else:
             logging.warning("FAILED")
@@ -127,7 +140,9 @@ bus = Bus(ser, crc)
 
 if args.echo:
     logging.info("Echo...")
-    bus.echo(args.node)
+    for i in range(args.repeat):
+        bus.echo(args.node)
+        #time.sleep(0.1)
 
 if args.reboot:
     logging.info("Rebooting...")

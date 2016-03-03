@@ -33,6 +33,8 @@ void Serial::setup(uint32_t baudrate, byte pinTXE, byte pinRXD) {
     UCSR0C = bit_mask2(UCSZ01, UCSZ00); /* 8-bit data */
     pinMode(pinTXE, OUTPUT);
     pinMode(pinRXD, OUTPUT);
+    pinWrite(pinTXE, LOW);
+    pinWrite(pinRXD, LOW);
 }
 
 void Serial::enable() {
@@ -93,7 +95,7 @@ void Serial::putChar(char c) {
   UDR0 = c;
   */
   
-  while (FIFO_FULL(txFIFO)) {}
+  //while (FIFO_FULL(txFIFO)) {}
   cli();
   FIFO_PUSH(txFIFO, c);
   sei();
@@ -139,11 +141,13 @@ ISR(USART_RX_vect) {
 }
 
 ISR(USART_UDRE_vect) {
-  byte b = FIFO_HEAD(txFIFO);
-  FIFO_POP(txFIFO);
-  UDR0 = b;
   if (FIFO_EMPTY(txFIFO)) {
     bit_clear(UCSR0B, UDRIE0);
+  }
+  else {
+    byte b = FIFO_HEAD(txFIFO);
+    FIFO_POP(txFIFO);
+    UDR0 = b;   
   }
 }
 

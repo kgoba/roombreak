@@ -28,7 +28,7 @@
 #define CMD_DONE        0x02      // Query if task is done or force it
 
 #define CMD_ECHO        0x00      // Echo back the same parameters
-#define CMD_REBOOT      0xFF      // Software reset to bootloader
+#define CMD_REBOOT      0x7F      // Software reset to bootloader
 
 // Bus CRC polynomial
 #define CRC_POLYNOMIAL  0x21
@@ -66,5 +66,10 @@ namespace BombConfig {
 
 namespace MapConfig {
   const byte BUS_ADDRESS = ADDRESS_MAP;
+  const byte BUS_NPARAMS = 4;
+};
+
+namespace RFIDConfig { 
+  const byte BUS_ADDRESS = ADDRESS_RFID;
   const byte BUS_NPARAMS = 4;
 };

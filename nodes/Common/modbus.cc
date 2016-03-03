@@ -398,7 +398,7 @@ void NewBus::setup(byte address, callback_t callback, byte *argv, byte argc, wor
       Serial::print(", ");
     */
   } while (++div);
-  Serial::println();
+  //Serial::println();
 }
 
 byte NewBus::readByte(bool doCRC) {
@@ -451,6 +451,7 @@ void NewBus::poll()
 
   byte cmd = readByte();          // second byte: command
   if (!_timer) return;
+  if (cmd & 0x80) return;
   byte nArgs = readByte();        // third byte: number of arguments (bytes)
   if (!_timer) return;
   
@@ -507,7 +508,7 @@ void NewBus::poll()
   sendByte(BUS_PREFIX2);
   sendByte(BUS_PREFIX3);
   sendByte(_address);
-  sendByte(cmd);
+  sendByte(0x80 | cmd);
   sendByte(nResults);
   for (byte idx = 0; idx < nResults; idx++) {
     sendByte(_argv[idx]);
