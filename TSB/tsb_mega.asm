@@ -213,7 +213,12 @@ RESET:
 
         in tmp4, MCUSR                  ; check reset condition
         sbrc tmp4, WDRF                 ; in case of a Watchdog reset
-        rjmp APPJUMP                    ; immediately leave TSB
+        ;rjmp APPJUMP                    ; immediately leave TSB [disabled by KG]
+        clr     tmp1
+        out     0x34, tmp1              ; disable watchdog
+        ldi     tmp2, 0x18
+        sts     0x60, tmp2              ; enable change (WDCE)
+        sts     0x60, tmp1              ; disable WDE
 
         ldi tmp1, low (RAMEND)          ; write ramend low
         out SPL, tmp1                   ; into SPL (stackpointer low)
