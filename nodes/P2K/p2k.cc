@@ -4,6 +4,7 @@
 // I2C subaddress (A0-A2 pins)
 #define SUBADDRESS      0
 
+/*
 // pin bit numbers at MCP chip (0 - PA0, 7 - PB7, 8 - PB0, 15 - PB7)
 #define PIN_LED1        (8+7)
 #define PIN_LED2        (8+6)
@@ -20,6 +21,7 @@
 #define PIN_D4_1        2
 #define PIN_D3_1        1
 #define PIN_D2_1        0
+*/
 
 //#define IODIR_MASK      0b0000000111111111
 #define IODIR_MASK      0x00FF

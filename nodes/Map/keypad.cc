@@ -44,7 +44,7 @@ void Keypad::setup() {
 }
 
 word Keypad::scan() {
-  word result = 0xFFFF;
+  word result = KEY_NONE;
   for (byte iOut = 0; iOut < _nOut; iOut++) {
     digitalWrite(_outPins[iOut], LOW);
     for (byte iIn = 0; iIn < _nIn; iIn++) {
@@ -59,6 +59,7 @@ word Keypad::scan() {
 
 char Keypad::getKey() {
   word keycode = scan();
+  if (keycode == KEY_NONE) return 0;
   byte row = keycode & 0xFF;
   byte col = keycode >> 8;
   return keyTable[row][col];

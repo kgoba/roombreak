@@ -7,8 +7,8 @@
 //volatile static FIFO<byte, 32> rxFIFO;
 //volatile static FIFO<byte, 32> txFIFO;
 
-volatile FIFO(rxFIFO, byte, 32);
-volatile FIFO(txFIFO, byte, 32);
+volatile FIFO(rxFIFO, byte, 128);
+volatile FIFO(txFIFO, byte, 128);
 
 byte Serial::_pinTXE;
 byte Serial::_pinRXD;
@@ -35,6 +35,8 @@ void Serial::setup(uint32_t baudrate, byte pinTXE, byte pinRXD) {
     pinMode(pinRXD, OUTPUT);
     pinWrite(pinTXE, LOW);
     pinWrite(pinRXD, LOW);
+    FIFO_INIT(rxFIFO);
+    FIFO_INIT(txFIFO);
 }
 
 void Serial::enable() {
@@ -130,9 +132,7 @@ byte Serial::pendingIn() {
 }
 
 byte Serial::pendingOut() {
-  //return txFIFO.available();
   return FIFO_COUNT(txFIFO);
-  //return 0;
 }
 
 ISR(USART_RX_vect) {

@@ -49,7 +49,7 @@ private:
 
 */
 
-#define BUS_DEFAULT_TIMEOUT   20
+#define BUS_DEFAULT_TIMEOUT   10
 
 #define CRC_TYPE    byte
 

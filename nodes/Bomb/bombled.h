@@ -41,5 +41,6 @@ private:
   byte    _minutes;
   byte    _seconds;
   bool    _blinkOn;
+  bool    _refresh;
 };
 

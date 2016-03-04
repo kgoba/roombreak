@@ -6,7 +6,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-using namespace FloorConfig;
+using namespace PlayerConfig;
 
 #define PIN_SENSE       19, 18, 17, 16, 15, 14, 7, 8, 10, 11
 
@@ -101,7 +101,7 @@ void loop() {
   // DO SOMETHING
 
   bus.poll();
-  _delay_ms(50);
+  _delay_ms(100);
 }
 
 ISR(TIMER2_OVF_vect) {

@@ -5,12 +5,16 @@
 #include <stdio.h>
 
 #include "config.h"
+#include <Common/modbus.h>
+#include <Common/config.h>
 #include <Common/util.h>
 #include <Common/ws2803s.h>
 #include <Common/serial.h>
 
 #include "line.h"
 #include "user.h"
+
+using namespace PBXConfig;
 
 WS2803S ioExpander(IO_SDA, IO_CLK);
 AudioPlayer player1(ioExpander, 15, 14, 13);
@@ -35,6 +39,27 @@ PUser user1(line1);
 //Operator oper(user1, user2, user3);
 
 Serial serial;
+NewBus bus;
+byte busParams[BUS_NPARAMS];
+
+byte busCallback(byte cmd, byte nParams, byte *nResults)
+{
+  switch (cmd) {
+    case CMD_INIT:
+    {
+      break;      
+    }
+    
+    case CMD_DONE:
+    {
+      break;      
+    }
+    
+    default:
+    break;
+  }
+  return 0;
+}
 
 void setup()
 {
@@ -45,8 +70,6 @@ void setup()
   player1.setup();
   line1.setup();
   line2.setup();
-  serial.setup(19200, 2, 3);
-  serial.enable();
   //player2.setup();
   //player3.setup();
   //serial.println("Setup done");
@@ -54,6 +77,10 @@ void setup()
   ADCSRA = bit_mask2(ADPS2, ADPS0);
   bit_set(ADCSRA, ADEN);
   analogReference();
+  
+  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
+  serial.enable();  
+  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
   
   pinMode(TALK_PIN, OUTPUT);
 }
@@ -85,6 +112,8 @@ void loop()
   else {
     digitalWrite(TALK_PIN, LOW);
   }
+  
+  bus.poll();
 }
 
 extern "C" void __cxa_pure_virtual() { while (1); }

@@ -53,11 +53,29 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
   return 0;
 }
 
+void buzzerOn()
+{
+  bit_set(TCCR0A, COM0B1);
+}
+
+void buzzerOff()
+{
+  bit_clear(TCCR0A, COM0B1);
+}
+
 void setup() {
   // Setup ENABLE pins
   for (byte iPin = 0; iPin < ARRAY_SIZE(kPinEnable); iPin++) {
     pinMode(kPinEnable[iPin], OUTPUT);
   }
+  
+  pinMode(5, OUTPUT);
+  // Setup Timer0
+  // Set Fast PWM mode, TOP = OCRA, prescaler 256
+  TCCR0A = (1 << WGM01) | (1 << WGM00);
+  TCCR0B = (1 << CS02) | (1 << WGM02);
+  OCR0A = 100 - 1;
+  OCR0B = OCR0A / 2;
 
   // Setup Timer2
   // Set CTC mode, TOP = OCRA, prescaler 1024
@@ -71,6 +89,10 @@ void setup() {
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
   bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  
+  buzzerOn();
+  _delay_ms(1000);
+  buzzerOff();
 }
 
 

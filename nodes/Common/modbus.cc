@@ -390,15 +390,7 @@ void NewBus::setup(byte address, callback_t callback, byte *argv, byte argc, wor
         rem = (rem << 1);
     }
     _crcTable[div] = rem;
-    /*
-    Serial::print(rem, Serial::HEX);
-    if ((div & 0x0F) == 0x0F)
-      Serial::println();
-    else 
-      Serial::print(", ");
-    */
   } while (++div);
-  //Serial::println();
 }
 
 byte NewBus::readByte(bool doCRC) {
@@ -406,7 +398,7 @@ byte NewBus::readByte(bool doCRC) {
     return 0;
   }
   while (!Serial::pendingIn()) {
-    _delay_us(10);
+    _delay_us(100);
     _timer--;
     if (!_timer) {
       return 0;
@@ -432,86 +424,89 @@ void NewBus::sendByte(byte b) {
 
 void NewBus::poll()
 {
-  if (!Serial::pendingIn()) return;
-  // initialize CRC
-  _crc = CRC_INITIAL;
+  while (Serial::pendingIn()) {    
+    _timer = _timeout;
+    // initialize CRC
+    _crc = CRC_INITIAL;
 
-  byte prefix1 = readByte();
-  if (!_timer) return;  
-  if (prefix1 != BUS_PREFIX1) return;
-  byte prefix2 = readByte();
-  if (!_timer) return;  
-  if (prefix2 != BUS_PREFIX2) return;
-  byte prefix3 = readByte();
-  if (!_timer) return;  
-  if (prefix3 != BUS_PREFIX3) return;
+    byte prefix1 = readByte();
+    if (!_timer) return;  
+    if (prefix1 != BUS_PREFIX1) continue;
+    byte prefix2 = readByte();
+    if (!_timer) return;  
+    if (prefix2 != BUS_PREFIX2) continue;
+    byte prefix3 = readByte();
+    if (!_timer) return;  
+    if (prefix3 != BUS_PREFIX3) continue;
 
-  byte address = readByte();      // first byte: address
-  if (!_timer) return;  
+    byte address = readByte();      // first byte: address
+    if (!_timer) return;  
 
-  byte cmd = readByte();          // second byte: command
-  if (!_timer) return;
-  if (cmd & 0x80) return;
-  byte nArgs = readByte();        // third byte: number of arguments (bytes)
-  if (!_timer) return;
-  
-  nArgs &= 0x0F;                  // allow up to 15 bytes of arguments
-  byte idx = 0;
-  while (nArgs > 0) {
-    byte arg = readByte();
+    byte cmd = readByte();          // second byte: command
     if (!_timer) return;
-    if (idx < _argc) {
-      _argv[idx] = arg;
-      idx++;
-    }
-    nArgs--;
-  }
-  byte crc = readByte(false);
-  if (!_timer) return;
-
-  // check address - receive also broadcast (0xFF)
-  if (address != _address && address != ADDRESS_ALL) return;
-  // check CRC
-  if (crc != _crc) return;
-
-  byte nResults;
-  byte status;
-
-  switch (cmd) {
-    case CMD_REBOOT:
-    {
-      //cli();
-      wdt_enable(WDTO_60MS);
-      //for(;;) {}
-      nResults = 1;
-      _argv[0] = WDTCSR;
-      break;
-    }  
-    case CMD_ECHO:
-    {
-      nResults = nArgs;
-      break;
-    }
-    default:
-    {
-      // call callback
-      nResults = 0;
-      status = _callback(cmd, idx, &nResults);    
-      break;
-    }
-  }
+    byte nArgs = readByte();        // third byte: number of arguments (bytes)
+    if (!_timer) return;
   
-  if (address == ADDRESS_ALL) return;     // in case of broadcast, do not reply
+    nArgs &= 0x0F;                  // allow up to 15 bytes of arguments
+    byte idx = 0;
+    while (nArgs > 0) {
+      byte arg = readByte();
+      if (!_timer) return;
+      if (idx < _argc) {
+        _argv[idx] = arg;
+        idx++;
+      }
+      nArgs--;
+    }
+    byte crc = readByte(false);
+    if (!_timer) return;
 
-  _crc = CRC_INITIAL;
-  sendByte(BUS_PREFIX1);
-  sendByte(BUS_PREFIX2);
-  sendByte(BUS_PREFIX3);
-  sendByte(_address);
-  sendByte(0x80 | cmd);
-  sendByte(nResults);
-  for (byte idx = 0; idx < nResults; idx++) {
-    sendByte(_argv[idx]);
+    // check command
+    if (cmd & 0x80) continue;
+    // check address - receive also broadcast (0xFF)
+    if (address != _address && address != ADDRESS_ALL) continue;
+    // check CRC
+    //if (crc != _crc) continue;
+
+    byte nResults;
+    byte status;
+
+    switch (cmd) {
+      case CMD_REBOOT:
+      {
+        //cli();
+        wdt_enable(WDTO_60MS);
+        //for(;;) {}
+        nResults = 1;
+        _argv[0] = WDTCSR;
+        break;
+      }  
+      case CMD_ECHO:
+      {
+        nResults = nArgs;
+        break;
+      }
+      default:
+      {
+        // call callback
+        nResults = 0;
+        status = _callback(cmd, idx, &nResults);    
+        break;
+      }
+    }
+  
+    if (address == ADDRESS_ALL) continue;     // in case of broadcast, do not reply
+
+    _crc = CRC_INITIAL;
+    sendByte(BUS_PREFIX1);
+    sendByte(BUS_PREFIX2);
+    sendByte(BUS_PREFIX3);
+    sendByte(_address);
+    sendByte(0x80 | cmd);
+    sendByte(nResults);
+    for (byte idx = 0; idx < nResults; idx++) {
+      sendByte(_argv[idx]);
+    }
+    sendByte(_crc);
   }
-  sendByte(_crc);
 }

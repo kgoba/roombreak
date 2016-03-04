@@ -8,8 +8,7 @@
 
 #include "p2k.h"
 
-#define BUS_ADDRESS     ADDRESS_P2K
-#define BUS_NPARAMS     4
+using namespace P2KConfig;
 
 #define TICK_FREQ       125
 
@@ -29,6 +28,16 @@ byte busParams[BUS_NPARAMS];
 byte busCallback(byte cmd, byte nParams, byte *nResults)
 {
   switch (cmd) {
+    case CMD_INIT:
+    {
+      break;      
+    }
+    
+    case CMD_DONE:
+    {
+      break;      
+    }
+    
     default:
     break;
   }
@@ -73,7 +82,7 @@ void loop() {
   task.update();
 
   bus.poll();
-  _delay_ms(2);
+  _delay_ms(1);
 }
 
 ISR(TIMER0_OVF_vect) {

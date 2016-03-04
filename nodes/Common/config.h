@@ -19,6 +19,9 @@
 #define ADDRESS_KEY     21
 #define ADDRESS_FLOOR   22
 #define ADDRESS_MAP     23
+#define ADDRESS_VALVE   24
+#define ADDRESS_WC      25
+#define ADDRESS_PLAYER  26
 
 // Broadcast address
 #define ADDRESS_ALL     0xFF
@@ -71,5 +74,20 @@ namespace MapConfig {
 
 namespace RFIDConfig { 
   const byte BUS_ADDRESS = ADDRESS_RFID;
+  const byte BUS_NPARAMS = 4;
+};
+
+namespace PlayerConfig { 
+  const byte BUS_ADDRESS = ADDRESS_PLAYER;
+  const byte BUS_NPARAMS = 4;
+};
+
+namespace P2KConfig {
+  const byte BUS_ADDRESS = ADDRESS_P2K;
+  const byte BUS_NPARAMS = 4;
+};
+
+namespace PBXConfig {
+  const byte BUS_ADDRESS = ADDRESS_PBX;
   const byte BUS_NPARAMS = 4;
 };

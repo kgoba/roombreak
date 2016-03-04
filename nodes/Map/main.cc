@@ -99,5 +99,5 @@ void loop() {
   task.loop();
   
   bus.poll();
-  _delay_ms(50);
+  _delay_ms(20);
 }

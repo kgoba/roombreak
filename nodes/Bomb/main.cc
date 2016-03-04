@@ -81,7 +81,7 @@ void loop() {
   task.update();
 
   bus.poll();
-  _delay_ms(100);
+  _delay_ms(50);
 }
 
 ISR(TIMER0_OVF_vect) {

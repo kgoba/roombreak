@@ -8,6 +8,7 @@ BombLED::BombLED() : _driver(PIN_SDA, PIN_CLK, 3)
   _minutes = DEFAULT_MINUTES;
   _seconds = DEFAULT_SECONDS;
   _blinkOn = false;
+  _refresh = true;
 }
 
 void BombLED::setup()
@@ -18,6 +19,7 @@ void BombLED::setup()
 
 void BombLED::update()
 {
+  if (!_refresh) return;
   setLeds((1UL << 10) | (1UL << 11), _blinkOn ? 255 : 0);
   setDigits(_minutes / 10, _minutes % 10, _seconds / 10, _seconds % 10, 255);
   _driver.update();
@@ -27,20 +29,24 @@ void BombLED::tickSecond()
 {
   if (_seconds > 0) {
     _seconds--;
+    _refresh = true;
   }
   else if (_minutes > 0) {
     _seconds = 59;
     _minutes--;
+    _refresh = true;
   }
 }
 
 void BombLED::toggleBlink() {
   _blinkOn = !_blinkOn;
+  _refresh = true;
 }
 
 void BombLED::setMinutes(byte minutes)
 {
   _minutes = (minutes > 99) ? 99 : minutes;
+  _refresh = true;
 }
 
 byte BombLED::getMinutes() const
@@ -51,6 +57,7 @@ byte BombLED::getMinutes() const
 void BombLED::setSeconds(byte seconds)
 {
   _seconds = (seconds > 59) ? 59 : seconds;
+  _refresh = true;
 }
 
 byte BombLED::getSeconds() const

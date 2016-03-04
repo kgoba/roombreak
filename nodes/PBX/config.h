@@ -31,7 +31,7 @@
 #define TRACKS_RESPONSE   {10,11,12,13,14}
 
 // sense threshold voltages (in Volts)
-#define THRESHOLD_OPEN    0.2
+#define THRESHOLD_OPEN    0.4
 #define THRESHOLD_CLOSED  1.2
 
 // ADC hardware definitions

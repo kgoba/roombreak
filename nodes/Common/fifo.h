@@ -11,6 +11,7 @@ static struct {                \
   byte count;                  \
 } name;
 
+#define FIFO_INIT(name)     name.head = name.count = 0
 #define FIFO_SIZE(name)     ARRAY_SIZE(name.buffer)
 #define FIFO_EMPTY(name)    (name.count == 0)
 #define FIFO_FULL(name)     (name.count == FIFO_SIZE(name))
