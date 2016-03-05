@@ -5,12 +5,12 @@
 
 class AudioPlayer {
 public:
-  AudioPlayer(WS2803S &expander, byte pin0, byte pin1, byte pin2) 
-    : _expander(expander), _pin0(pin0), _pin1(pin1), _pin2(pin2) {}
+  AudioPlayer(WS2803S &expander, byte pin0, byte pin1 = 0, byte pin2 = 0, byte pin3 = 0, byte pin4 = 0) 
+    : _expander(expander), _pin0(pin0), _pin1(pin1), _pin2(pin2), _pin3(pin3), _pin4(pin4) {}
   
   void setup();
   void play(byte id);
 private:
-  byte _pin0, _pin1, _pin2;
+  byte _pin0, _pin1, _pin2, _pin3, _pin4;
   WS2803S &_expander;
 };

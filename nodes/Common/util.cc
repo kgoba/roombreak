@@ -30,7 +30,7 @@ void pinMode(byte pin, PinMode mode)
   }
 }
 
-void digitalWrite(byte pin, PinState state)
+void pinWrite(byte pin, PinState state)
 {
   byte bit;
   volatile uint8_t * pPort;
@@ -57,7 +57,7 @@ void digitalWrite(byte pin, PinState state)
   }
 }
 
-PinState digitalRead(byte pin)
+PinState pinRead(byte pin)
 {
   byte bit;
   volatile uint8_t * pPort;
@@ -77,22 +77,22 @@ PinState digitalRead(byte pin)
   return ((*pPort) & mask) ? HIGH : LOW;
 }
 
-void analogSetup()
+void adcSetup()
 {
   
 }
 
-void analogEnable()
+void adcEnable()
 {
   bit_set(ADCSRA, ADEN);
 }
 
-void analogReference()
+void adcReference()
 {
   ADMUX = (ADMUX & 0b00001111) | bit_mask1(REFS0);
 }
 
-word analogRead(byte pin)
+word adcRead(byte pin)
 {
   ADMUX = (ADMUX & 0b11110000) | (pin & 0b00001111);
   bit_set(ADCSRA, ADSC);

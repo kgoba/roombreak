@@ -77,6 +77,11 @@ namespace RFIDConfig {
   const byte BUS_NPARAMS = 4;
 };
 
+namespace ValveConfig {
+  const byte BUS_ADDRESS = ADDRESS_VALVE;
+  const byte BUS_NPARAMS = 4;
+};
+
 namespace PlayerConfig { 
   const byte BUS_ADDRESS = ADDRESS_PLAYER;
   const byte BUS_NPARAMS = 4;

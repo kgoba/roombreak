@@ -27,12 +27,12 @@ void PLine::playCustom(byte id) {
 
 void PLine::setRing(bool ringing) {
   _ringing = ringing;
-  digitalWrite(_config.pinRing, _ringing ? HIGH : LOW);
+  pinWrite(_config.pinRing, _ringing ? HIGH : LOW);
 }
 
 void PLine::update() {
   // read analog value and update the moving average
-  word aval = analogRead(_config.apinSense);
+  word aval = adcRead(_config.apinSense);
   _senseAvg += aval - (_senseAvg >> 4);
   
   // calculate 6.10-bit fixed point value

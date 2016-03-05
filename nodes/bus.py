@@ -134,7 +134,7 @@ class Bus:
 
 logging.debug(args)
 
-ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.5, write_timeout = 0.5, rtscts = False)
+ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.2, write_timeout = 0.2, rtscts = False)
 crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)
 bus = Bus(ser, crc)
 
@@ -142,7 +142,7 @@ if args.echo:
     logging.info("Echo...")
     for i in range(args.repeat):
         bus.echo(args.node)
-        #time.sleep(0.1)
+        time.sleep(0.2)
 
 if args.reboot:
     logging.info("Rebooting...")

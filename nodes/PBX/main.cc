@@ -16,19 +16,17 @@
 
 using namespace PBXConfig;
 
-WS2803S ioExpander(IO_SDA, IO_CLK);
-AudioPlayer player1(ioExpander, 15, 14, 13);
-//AudioPlayer player2(ioExpander, 9, 10, 11);
-//AudioPlayer player3(ioExpander, 4, 5, 6);
+WS2803S ioExpander(PIN_SDA, PIN_CLK);
+AudioPlayer player1(ioExpander, XPIN_TRSEL0, XPIN_TRSEL1, XPIN_TRSEL2);
 
 PLineConfig config1 = { 
-  .apinSense = SENSE1_PIN, .pinRing = RING1_PIN, 
+  .apinSense = PIN_SENSE1, .pinRing = PIN_RING1, 
   .trackDial = TRACK_DIAL, .trackCall = TRACK_CALL, .trackBusy = TRACK_BUSY 
 };
 PLine line1(player1, config1);
 
 PLineConfig config2 = { 
-  .apinSense = SENSE2_PIN, .pinRing = RING2_PIN, 
+  .apinSense = PIN_SENSE2, .pinRing = PIN_RING2, 
   .trackDial = TRACK_DIAL, .trackCall = TRACK_CALL, .trackBusy = TRACK_BUSY 
 };
 PLine line2(player1, config2);
@@ -63,26 +61,21 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
 
 void setup()
 {
-  ADCSRA = (1 << ADEN) | (1 << ADPS2);      // prescaler 16
+  pinMode(PIN_TALK, OUTPUT);
 
-  sei();
   ioExpander.setup();
   player1.setup();
   line1.setup();
   line2.setup();
-  //player2.setup();
-  //player3.setup();
-  //serial.println("Setup done");
   
+  //ADCSRA = (1 << ADEN) | (1 << ADPS2);      // prescaler 16
   ADCSRA = bit_mask2(ADPS2, ADPS0);
   bit_set(ADCSRA, ADEN);
-  analogReference();
+  adcReference();
   
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
   bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
-  
-  pinMode(TALK_PIN, OUTPUT);
 }
 
 void loop()
@@ -107,10 +100,10 @@ void loop()
   
   line2.update();
   if (line2.getState() == PLine::CLOSED) {
-    digitalWrite(TALK_PIN, HIGH);
+    pinWrite(PIN_TALK, HIGH);
   }
   else {
-    digitalWrite(TALK_PIN, LOW);
+    pinWrite(PIN_TALK, LOW);
   }
   
   bus.poll();

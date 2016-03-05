@@ -20,17 +20,55 @@ enum PinMode {
   INPUT, OUTPUT
 };
 
-#define pinWrite    digitalWrite
-#define pinRead     digitalRead
+#define digitalWrite  pinWrite
+#define digitalRead   pinRead
 
 void pinMode(byte pin, PinMode mode);
-void digitalWrite(byte pin, PinState state);
-PinState digitalRead(byte pin);
+void pinWrite(byte pin, PinState state);
+PinState pinRead(byte pin);
 
 //#define VOLTS_TO_COUNTS(V)   (int)(V * ADC_COUNTS / ADC_VREF + 0.5)
 
-void analogReference();
-word analogRead(byte pin);
+void adcReference();
+word adcRead(byte pin);
+
+
+#define TIMER0_SETUP(mode, prescaler) \
+{ \
+  TCCR0A = (mode & 0x03); \
+  uint8_t mode_b = ((mode & 0x04) << 1); \
+  switch(prescaler) { \
+    case 0: TCCR0B = TIMER0_STOP | mode_b; break; \
+    case 1: TCCR0B = TIMER0_PRE1 | mode_b; break; \
+    case 8: TCCR0B = TIMER0_PRE1 | mode_b; break; \
+    case 32: TCCR0B = TIMER0_PRE1 | mode_b; break; \
+    case 64: TCCR0B = TIMER0_PRE1 | mode_b; break; \
+    case 128: TCCR0B = TIMER0_PRE1 | mode_b; break; \
+    case 256: TCCR0B = TIMER0_PRE1 | mode_b; break; \
+    case 1024: TCCR0B = TIMER0_PRE1 | mode_b; break; \
+  } \
+}
+
+#define TIMER0_NORMAL         0
+#define TIMER0_PWM_PHASE      1
+#define TIMER0_CTC            2
+#define TIMER0_FAST_PWM       3
+#define TIMER0_PWM_PHASE_A    5
+#define TIMER0_FAST_PWM_A     7
+
+#define TIMER0_STOP       0
+#define TIMER0_PRE1       (1 << CS00)
+#define TIMER0_PRE8       (1 << CS01)
+#define TIMER0_PRE64      ((1 << CS00) | (1 << CS01))
+#define TIMER0_PRE256     (1 << CS02)
+#define TIMER0_PRE1024    ((1 << CS00) | (1 << CS02))
+#define TIMER0_T0_FALL    ((1 << CS01) | (1 << CS02))
+#define TIMER0_T0_RISE    ((1 << CS00) | (1 << CS01) | (1 << CS02))
+
+#define TIMER0_PRESCALER(freq)        (F_CPU/(freq) < 256 ? 1UL : (F_CPU/(8UL*freq) < 256 ? 8UL : (F_CPU/(64UL*freq) ? 64UL : \
+                                      (F_CPU/(256UL*freq) < 256 ? 256UL : (F_CPU/(1024UL*freq) < 256 ? 1024UL : 0 )))))
+
+#define TIMER0_COUNTS(freq)           (byte)(F_CPU / (TIMER0_PRESCALER(freq) * freq))
 
 
 #define TIMER2_SETUP(mode, prescaler) \
