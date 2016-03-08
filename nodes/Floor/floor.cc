@@ -2,6 +2,7 @@
 #include <Common/serial.h>
 #include <Common/modbus.h>
 #include <Common/util.h>
+#include <Common/audioplayer.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -10,18 +11,21 @@ using namespace FloorConfig;
 
 #define PIN_SENSE       19, 18, 17, 16, 15, 14, 7, 8, 10, 11
 
-// rfid
-// data 19, en 18, 
-// data 17, en 16
-// data 15, en 14
-// data 13, en 12
-// data 11, en  9
-// data  8, en  7
-// buzzer 5
+// IO expander control pins
+#define PIN_SDA           13
+#define PIN_CLK           12
 
-// valves
-// hall - a2, a1, a0
-// servo - 9
+// audio player track selection pins (on I/O expander)
+#define XPIN_TRSEL0  15
+#define XPIN_TRSEL1  14
+#define XPIN_TRSEL2  13
+#define XPIN_TRSEL3  17
+#define XPIN_TRSEL4  16
+
+WS2803S ioExpander(PIN_SDA, PIN_CLK);
+AudioPlayer player1(ioExpander, XPIN_TRSEL0, XPIN_TRSEL1, XPIN_TRSEL2, XPIN_TRSEL3, XPIN_TRSEL4);
+
+const byte pinSense[] = { PIN_SENSE };
 
 // internal timing frequency in Hz
 #define TICK_FREQ       125
@@ -81,6 +85,9 @@ void audioPlay(byte track) {
 */
 
 void setup() {
+  for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++)
+    pinWrite(pinSense[idx], HIGH);
+  
   // Setup Timer2
   // Set CTC mode, TOP = OCRA, prescaler 1024
   // Overflow 125Hz (8ms), overflow interrupt enabled
@@ -94,14 +101,34 @@ void setup() {
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
   bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  
+  ioExpander.setup();
+  player1.setup();
 }
 
 
-void loop() {  
+void loop() {
+  static byte sound = 0;
+  
   // DO SOMETHING
+  bool found = false;
+  for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++) {
+    if (pinRead(pinSense[idx]) == LOW) {
+      found = true;
+      break;
+    }
+  }
+  if (found) {
+    player1.play(1);
+    //_delay_ms(10);
+    //player1.stop();
+  }
+  else {
+    player1.stop();    
+  }
 
   bus.poll();
-  _delay_ms(50);
+  _delay_ms(10);
 }
 
 ISR(TIMER2_OVF_vect) {

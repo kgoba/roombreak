@@ -1,5 +1,5 @@
 PROGRAMMER = usbasp
-F_CPU   = 16000000
+F_CPU   = 16000000UL
 MCU     = atmega328p
 
 CXX = avr-g++

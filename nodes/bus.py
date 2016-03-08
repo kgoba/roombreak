@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
 parser.add_argument('-d', help = 'Serial port device', metavar='DEV', dest = 'DEV')
 parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
-parser.add_argument('-n', '--node', help = 'Node identifier', type=int)
+parser.add_argument('-n', '--node', help = 'Node identifier')
 parser.add_argument('-R', '--reboot', help = 'Reboot', action = 'store_true', default = False)
 parser.add_argument('-e', '--echo', help = 'Ping node for echo', action = 'store_true', default = False)
 parser.add_argument('-r', '--repeat', help = 'Repeat N times', type = int, default = 1)
@@ -57,6 +57,19 @@ class Bus:
     CMD_REBOOT      = 0x7F
     PREFIX          = [0xAF, 0x6A, 0xDE]
     
+    ADDRESS_MAP = {
+        'PBX'   : 17, 
+        'BOMB'  : 18, 
+        'P2K'   : 19, 
+        'RFID'  : 20,
+        'KEY'   : 21,
+        'FLOOR' : 22,
+        'MAP'   : 23,
+        'VALVE' : 24,
+        'WC'    : 25,
+        'PLAYER': 26
+    }
+    
     def __init__(self, serial, crc):
         self.ser = serial
         self.crc = crc
@@ -84,14 +97,13 @@ class Bus:
         return crc == recv[-1]
 
     def echo(self, address):
-        data = self.packet(address, self.CMD_ECHO)
+        if not address in self.ADDRESS_MAP:
+            return None
+        data = self.packet(self.ADDRESS_MAP[address], self.CMD_ECHO)
         self.send(data)
         recv = self.receive(len(data), nRetries = 1)
-        if self.check(data, recv):
-            logging.info("SUCCESS")
-        else:
-            logging.warning("FAILED")
-        return
+        success = self.check(data, recv)
+        return success
 
     def reboot(self, address):
         data = self.packet(address, self.CMD_REBOOT)
@@ -141,7 +153,14 @@ bus = Bus(ser, crc)
 if args.echo:
     logging.info("Echo...")
     for i in range(args.repeat):
-        bus.echo(args.node)
+        success = bus.echo(args.node)
+        if success == None:
+            logging.error("Unknown Node")
+            sys.exit(1)
+        if success:
+            logging.info("SUCCESS")
+        else:
+            logging.warning("FAILED")
         time.sleep(0.2)
 
 if args.reboot:

@@ -49,12 +49,14 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
 
 void servoOn()
 {
+  pinWrite(PIN_PWM, LOW);
   bit_set(TCCR0A, COM0B1);
 }
 
 void servoOff()
 {
   bit_clear(TCCR0A, COM0B1);
+  pinWrite(PIN_PWM, LOW);
 }
 
 void servoSet(word ppm_us)

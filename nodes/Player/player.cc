@@ -2,46 +2,34 @@
 #include <Common/serial.h>
 #include <Common/modbus.h>
 #include <Common/util.h>
+#include <Common/audioplayer.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
 using namespace PlayerConfig;
 
-#define PIN_SENSE       19, 18, 17, 16, 15, 14, 7, 8, 10, 11
+// IO expander control pins
+#define PIN_SDA           13
+#define PIN_CLK           12
 
-// rfid
-// data 19, en 18, 
-// data 17, en 16
-// data 15, en 14
-// data 13, en 12
-// data 11, en  9
-// data  8, en  7
-// buzzer 5
+// audio player track selection pins (on I/O expander)
+#define XPIN_MUTE 12
 
-// valves
-// hall - a2, a1, a0
-// servo - 9
+WS2803S ioExpander(PIN_SDA, PIN_CLK);
+AudioPlayer player1(ioExpander, 15, 14, 13, 17, 16);
+AudioPlayer player2(ioExpander, 9, 10, 11, 8, 7);
+AudioPlayer player3(ioExpander, 4, 5, 6, 2, 3);
+
 
 // internal timing frequency in Hz
 #define TICK_FREQ       125
 
-// sensor pin numbers
-const byte kPinSense[] = { PIN_SENSE };
-
-// audio player track selection pin numbers starting from LSB
-//const byte PIN_PLAYER[] = {};
 
 enum {
   FLAG_DONE
 };
 
-enum {
-  kINIT,
-  kCLOSED,
-  kOPENING,
-  kCLOSING
-};
 
 volatile byte gFlags;
 volatile word gMillis;
@@ -70,15 +58,6 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
   return 0;
 }
 
-/*
-void audioPlay(byte track) {
-  byte mask = 1;
-  for (byte idx = 0; idx < ARRAY_SIZE(PIN_PLAYER); idx++) {
-    pinWrite(PIN_PLAYER[idx], (track & mask) ? HIGH : LOW);
-    mask <<= 1;
-  }
-}
-*/
 
 void setup() {
   // Setup Timer2
@@ -89,16 +68,22 @@ void setup() {
   TIMSK2 = (1 << TOIE2); 
   OCR2A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
 
-  gState = kINIT;
-
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
   bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+
+  ioExpander.setup();
+  player1.setup();
+  player2.setup();
+  player3.setup();
 }
 
 
 void loop() {  
   // DO SOMETHING
+  player1.play(1);
+  player2.play(1);
+  player3.play(1);
 
   bus.poll();
   _delay_ms(100);
