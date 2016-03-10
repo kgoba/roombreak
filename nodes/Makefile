@@ -1,4 +1,4 @@
-SUBDIRS = Common Valve Player Bomb PBX P2K Map Key Floor RFID
+SUBDIRS = Common Dimmer WC Valve Player Bomb PBX P2K Map Key Floor RFID
 SUBCLEAN = $(addsuffix .clean, $(SUBDIRS))
 
 .PHONY: all $(SUBDIRS) clean $(SUBCLEAN)

@@ -22,6 +22,7 @@
 #define ADDRESS_VALVE   24
 #define ADDRESS_WC      25
 #define ADDRESS_PLAYER  26
+#define ADDRESS_DIMMER  27
 
 // Broadcast address
 #define ADDRESS_ALL     0xFF
@@ -94,5 +95,15 @@ namespace P2KConfig {
 
 namespace PBXConfig {
   const byte BUS_ADDRESS = ADDRESS_PBX;
+  const byte BUS_NPARAMS = 4;
+};
+
+namespace WCConfig {
+  const byte BUS_ADDRESS = ADDRESS_WC;
+  const byte BUS_NPARAMS = 4;
+};
+
+namespace DimmerConfig {
+  const byte BUS_ADDRESS = ADDRESS_DIMMER;
   const byte BUS_NPARAMS = 4;
 };
