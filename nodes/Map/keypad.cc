@@ -1,6 +1,6 @@
 #include <Common/util.h>
 
-#include "Keypad.h"
+#include "keypad.h"
 
 // Keypad parameters
 #define N_KEYPAD_COL        4
