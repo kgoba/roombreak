@@ -12,6 +12,8 @@ using namespace P2KConfig;
 
 #define TICK_FREQ       125
 
+#define PIN_OPEN        5
+
 enum {
   FLAG_SECOND,
   FLAG_BLINK
@@ -45,6 +47,8 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
 }
 
 void setup() {
+  pinMode(PIN_OPEN, OUTPUT);
+  
   // Setup Timer0
   // Set CTC mode, TOP = OCRA, prescaler 1024
   // Overflow 125Hz (8ms)
@@ -67,11 +71,18 @@ void loop() {
   {
     bit_clear(gFlags, FLAG_BLINK);
     
+    bool open = false;
     for (byte idx = 0; idx < 5; idx++) {
       byte state = task.getButtons(idx);
       task.setLED(idx, (state & 0x0F) != 0);
       task.setLED(idx + 5, (state & 0xF0) != 0);
+      //if ((state & 0x0F) == 0x01) open = true;
     }
+    open = task.getButton(0, 0);
+    
+    if (open) pinWrite(PIN_OPEN, HIGH);
+    else pinWrite(PIN_OPEN, LOW);
+    
     //task.setLED(led, phase);      
     if (++led >= 10) {
       led = 0;

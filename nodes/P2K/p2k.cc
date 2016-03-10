@@ -80,3 +80,13 @@ byte P2K::getButtons(byte idx)
 {
   return _buttons[idx];
 }
+
+bool P2K::getButton(byte row, byte column)
+{
+  if (row >= 10) return false;
+  if (column >= 4) return false;
+  bool alt = (row >= 5);
+  byte state = _buttons[alt ? row - 5 : row];
+  byte mask = 1 << (alt ? column + 4 : column);
+  return state & mask;
+}

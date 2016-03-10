@@ -15,7 +15,8 @@ public:
   static void setLED(byte idx, bool enabled);
   
   static byte getButtons(byte idx);
-  
+  static bool getButton(byte row, byte column);
+    
 private:
   static MCP23017    _driver;
   static byte        _buttons[N_ROWS];
