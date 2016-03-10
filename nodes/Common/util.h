@@ -4,8 +4,8 @@
 
 #define ARRAY_SIZE(array)     (sizeof(array) / sizeof(array[0]))
 
-#define bit_set(var, bit)       var |= (1 << (bit))
-#define bit_clear(var, bit)     var &= ~(1 << (bit))
+#define bit_set(var, bit)       (var |= (1 << (bit)))
+#define bit_clear(var, bit)     (var &= ~(1 << (bit)))
 #define bit_check(var, bit)     (var & (1 << (bit)))
 #define bit_mask1(bit)          (1 << (bit))
 #define bit_mask2(bit1, bit2)   ((1 << bit1) | (1 << bit2))
@@ -32,6 +32,15 @@ PinState pinRead(byte pin);
 void adcReference();
 word adcRead(byte pin);
 
+#define PORTX(pin)      ((pin < 8) ? PORTD : (pin < 16) ? PORTB : (pin < 24) ? PORTC : 0)
+#define DDRX(pin)       ((pin < 8) ? DDRD : (pin < 16) ? DDRB : (pin < 24) ? DDRC : 0)
+#define PINX(pin)       ((pin < 8) ? PIND : (pin < 16) ? PINB : (pin < 24) ? PINC : 0)
+#define OFFSETX(pin)    ((pin < 8) ? 0 : (pin < 16) ? 8 : 16)
+
+#define PIN_SET(pin)    (bit_set(PORTX(pin), pin - OFFSETX(pin)))
+#define PIN_CLR(pin)    (bit_clear(PORTX(pin), pin - OFFSETX(pin)))
+#define PIN_READ(pin)   (bit_check(PINX(pin), pin - OFFSETX(pin)))
+#define PIN_WRITE(pin, value)       ((value) ? bit_set(pin) : bit_clear(pin))
 
 #define TIMER0_SETUP(mode, prescaler) \
 { \
