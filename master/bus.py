@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-import serial
+import rs485
 import struct
 import time
 import sys
@@ -10,16 +10,16 @@ import sys
 CRC_POLYNOMIAL  = 0x21
 CRC_INITIAL     = 0xFF
 
-logging.basicConfig(level = logging.INFO)
 
 parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
-parser.add_argument('-d', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
 parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
 parser.add_argument('-n', '--node', help = 'Node identifier')
 parser.add_argument('-R', '--reboot', help = 'Reboot', action = 'store_true', default = False)
 parser.add_argument('-e', '--echo', help = 'Ping node for echo', action = 'store_true', default = False)
 parser.add_argument('-r', '--repeat', help = 'Repeat N times', type = int, default = 1)
+parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
 
 args = parser.parse_args(sys.argv[1:])
 
@@ -106,7 +106,9 @@ class Bus:
         return success
 
     def reboot(self, address):
-        data = self.packet(address, self.CMD_REBOOT)
+        if not address in self.ADDRESS_MAP:
+            return None
+        data = self.packet(self.ADDRESS_MAP[address], self.CMD_REBOOT)
         self.send(data)
         recv = self.receive(8)
         return
@@ -144,9 +146,14 @@ class Bus:
         logging.warning("Receive timeout")
         return False
 
+if args.debug:
+  level = logging.DEBUG
+else:
+  level = logging.INFO
+logging.basicConfig(level = level)
 logging.debug(args)
 
-ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.2, write_timeout = 0.2, rtscts = False)
+ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
 crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)
 bus = Bus(ser, crc)
 
@@ -161,7 +168,7 @@ if args.echo:
             logging.info("SUCCESS")
         else:
             logging.warning("FAILED")
-        time.sleep(0.2)
+        time.sleep(0.5)
 
 if args.reboot:
     logging.info("Rebooting...")

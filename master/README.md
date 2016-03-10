@@ -25,7 +25,7 @@ sudo systemctl disable getty@ttyAMA0.service
 3 Installing tools
 ~~~~~~~~~~~~~~~~~~
 
-sudo apt-get install gcc-avr git
+sudo apt-get install gcc-avr git python-gpiozero
 
 
 4 Installing source
