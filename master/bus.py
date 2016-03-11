@@ -10,19 +10,6 @@ import sys
 CRC_POLYNOMIAL  = 0x21
 CRC_INITIAL     = 0xFF
 
-
-parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
-
-parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
-parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
-parser.add_argument('-n', '--node', help = 'Node identifier')
-parser.add_argument('-R', '--reboot', help = 'Reboot', action = 'store_true', default = False)
-parser.add_argument('-e', '--echo', help = 'Ping node for echo', action = 'store_true', default = False)
-parser.add_argument('-r', '--repeat', help = 'Repeat N times', type = int, default = 1)
-parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
-
-args = parser.parse_args(sys.argv[1:])
-
 class CRC:
     def __init__(self, width, polynomial, initial):
         table = []
@@ -67,7 +54,8 @@ class Bus:
         'MAP'   : 23,
         'VALVE' : 24,
         'WC'    : 25,
-        'PLAYER': 26
+        'PLAYER': 26,
+        'DIMMER': 27
     }
     
     def __init__(self, serial, crc):
@@ -146,30 +134,46 @@ class Bus:
         logging.warning("Receive timeout")
         return False
 
-if args.debug:
-  level = logging.DEBUG
-else:
-  level = logging.INFO
-logging.basicConfig(level = level)
-logging.debug(args)
+def main(args):
+  if args.debug:
+    level = logging.DEBUG
+  else:
+    level = logging.INFO
+  logging.basicConfig(level = level)
+  logging.debug(args)
 
-ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
-crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)
-bus = Bus(ser, crc)
+  ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
+  crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)
+  bus = Bus(ser, crc)
 
-if args.echo:
-    logging.info("Echo...")
-    for i in range(args.repeat):
-        success = bus.echo(args.node)
-        if success == None:
-            logging.error("Unknown Node")
-            sys.exit(1)
-        if success:
-            logging.info("SUCCESS")
-        else:
-            logging.warning("FAILED")
-        time.sleep(0.5)
+  if args.echo:
+      logging.info("Echo...")
+      for i in range(args.repeat):
+          success = bus.echo(args.node)
+          if success == None:
+              logging.error("Unknown Node")
+              sys.exit(1)
+          if success:
+              logging.info("SUCCESS")
+          else:
+              logging.warning("FAILED")
+          time.sleep(0.5)
 
-if args.reboot:
-    logging.info("Rebooting...")
-    bus.reboot(args.node)
+  if args.reboot:
+      logging.info("Rebooting...")
+      bus.reboot(args.node)
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
+
+  parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+  parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
+  parser.add_argument('-n', '--node', help = 'Node identifier')
+  parser.add_argument('-R', '--reboot', help = 'Reboot', action = 'store_true', default = False)
+  parser.add_argument('-e', '--echo', help = 'Ping node for echo', action = 'store_true', default = False)
+  parser.add_argument('-r', '--repeat', help = 'Repeat N times', type = int, default = 1)
+  parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
+
+  args = parser.parse_args(sys.argv[1:])
+  
+  main(args)
