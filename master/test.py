@@ -3,40 +3,64 @@ from gpiozero import DigitalOutputDevice
 from gpiozero import DigitalInputDevice
 from signal import pause
 
+import argparse
+import logging
 import time
+import sys
+
 import rs485
 
-PIN_NODE_RST = 27
-PIN_START_BTN = 23
-PIN_EXIT_EN = 24
+class RPi:
+  PIN_NODE_RST = 27
+  PIN_START_BTN = 23
+  PIN_EXIT_EN = 24
 
-PIN_SNAKE_EN = 2
-PIN_EASTER_EN = 3
-PIN_SNAKE_DONE = 25
+  PIN_SNAKE_EN = 2
+  PIN_EASTER_EN = 3
+  PIN_SNAKE_DONE = 25
 
+  def __init__(self):
+    self.rstPin = DigitalOutputDevice(self.PIN_NODE_RST)
+    self.btnPin = DigitalInputDevice(self.PIN_START_BTN)
+    self.outPin = DigitalOutputDevice(self.PIN_EXIT_EN)
+    self.snakeOnPin = DigitalOutputDevice(self.PIN_SNAKE_EN, active_high = False)
+    return
 
-rstPin = DigitalOutputDevice(PIN_NODE_RST)
+  def resetNetwork(self):
+    self.rstPin.on()
+    time.sleep(0.1)
+    self.rstPin.off()
+    #self.rstPin.blink(on_time = 0.1, off_time = 0.1, background = False)
+    return
 
-btnPin = DigitalInputDevice(PIN_START_BTN)
-outPin = DigitalOutputDevice(PIN_EXIT_EN)
+  def setSnake(self, on):
+    if on: self.snakeOnPin.on()
+    else: self.snakeOnPin.off()
+    return
 
-snakeOnPin = DigitalOutputDevice(PIN_SNAKE_EN)
+def main(args):
+  rpi = RPi()
 
-#outPin.source = btnPin.values
+  if args.reset:
+    rpi.resetNetwork()
 
-#pause()
+  for cmd in args.command:
+    if cmd == 'reset':
+      rpi.resetNetwork()
 
-#rstPin.on()
-#time.sleep(0.1)
-#rstPin.off()
-#time.sleep(1)
+  #outPin.source = btnPin.values
+  #pause()
 
-snakeOnPin.off()
-time.sleep(10)
-snakeOnPin.on()
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
-#ser = rs485.RS485('/dev/ttyAMA0')
+  parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+  parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
+  parser.add_argument('-n', '--node', help = 'Node identifier')
+  parser.add_argument('-R', '--reset', help = 'Reboot', action = 'store_true', default = False)
+  parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
+  parser.add_argument('command', nargs='+')
 
-#ser.write('Test')
-#print ser.read(4)
-
+  args = parser.parse_args(sys.argv[1:])
+  
+  main(args)

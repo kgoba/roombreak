@@ -27,11 +27,13 @@ class RS485:
 
   def write(self, data):
     #if pinRXD != None: pinRXD.on()
-    if pinTXE != None: pinTXE.on()
+    if pinTXE != None: 
+      pinTXE.on()
     result = self.ser.write(data)
     self.ser.flush()
-    if pinTXE != None: pinTXE.off()
-    echo = self.ser.read(len(data))
+    if pinTXE != None: 
+      pinTXE.off()
+      echo = self.ser.read(len(data))
     return result
 
   def read(self, size = 1):
