@@ -84,6 +84,9 @@ class Bus:
         crc = self.crc.compute(recv[:-1])
         return crc == recv[-1]
 
+    def getAddresses(self):
+	return self.ADDRESS_MAP.keys()
+
     def echo(self, address):
         if not address in self.ADDRESS_MAP:
             return None
@@ -149,15 +152,18 @@ def main(args):
   if args.echo:
       logging.info("Echo...")
       for i in range(args.repeat):
-          success = bus.echo(args.node)
-          if success == None:
-              logging.error("Unknown Node")
-              sys.exit(1)
-          if success:
-              logging.info("SUCCESS")
-          else:
-              logging.warning("FAILED")
-          time.sleep(0.5)
+          if args.node: addrlist = [args.node]
+          else: addrlist = bus.getAddresses()
+          for addr in addrlist:
+            success = bus.echo(addr)
+            if success == None:
+                logging.error("Unknown Node")
+                sys.exit(1)
+            if success:
+                logging.info("%s: SUCCESS" % addr)
+            else:
+                logging.warning("%s: FAILED" % addr)
+            time.sleep(0.1)
 
   if args.reboot:
       logging.info("Rebooting...")
