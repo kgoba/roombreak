@@ -111,7 +111,7 @@ void loop() {
   }
   
   bus.poll();
-  _delay_ms(10);
+  _delay_ms(50);
 }
 
 ISR(TIMER2_OVF_vect) {
