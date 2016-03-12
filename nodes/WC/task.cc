@@ -16,7 +16,11 @@ using namespace WCConfig;
 
 // IO pins
 #define PIN_FAN         5
-#define PIN_BTN         16,17,18,19
+//#define PIN_BTN         16,17,18,19
+#define PIN_BTN1        16
+#define PIN_BTN2        17
+#define PIN_BTN3        18
+#define PIN_BTN4        19
 #define PIN_PIR         14
 #define PIN_ZCROSS      8
 #define PIN_DIM1        11
@@ -27,11 +31,19 @@ using namespace WCConfig;
 #define PIN_CLK         12
 
 // audio player track selection pins (on I/O expander)
-#define XPIN_MUTE 12
+#define XPIN_MUTE       12
+
+//const byte pinButtons[] = { PIN_BTN };
 
 WS2803S ioExpander(PIN_SDA, PIN_CLK);
 AudioPlayer player1(ioExpander, 15, 14, 13, 17, 16);
 
+Button btn1(PIN_BTN1);
+Button btn2(PIN_BTN2);
+Button btn3(PIN_BTN3);
+Button btn4(PIN_BTN4);
+Button pir(PIN_PIR);
+OutputPin fan(PIN_FAN);
 
 enum {
   FLAG_DONE,
@@ -73,6 +85,13 @@ void setup() {
   // setup IO pins
   pinMode(PIN_FAN, OUTPUT);
   
+  btn1.setup();
+  btn2.setup();
+  btn3.setup();
+  btn4.setup();
+  pir.setup();
+  fan.setup();
+  
   // Setup Timer0
   // Set Fast PWM mode, TOP = OCRA, prescaler 1024 (64us)
   // PWM period 16ms
@@ -102,6 +121,8 @@ void setup() {
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
   bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  
+  fan.on();
 }
 
 void loop() {
@@ -110,12 +131,16 @@ void loop() {
     bit_clear(gFlags, FLAG_TIMEOUT);
   }
   
+//  if (btn1.check()) pinWrite(PIN_FAN, HIGH);
+//  else pinWrite(PIN_FAN, LOW);
+    
   bus.poll();
   _delay_ms(10);
 }
 
 ISR(TIMER2_OVF_vect) {
-  static byte fan_on = 0;
+  static byte fan_on;
+  
   gMillis += (1000UL / TICK_FREQ);
   //gMillis += 8;
   if (gMillis >= 100) {
@@ -128,6 +153,10 @@ ISR(TIMER2_OVF_vect) {
     if (fan_on >= OCR0A) fan_on = 0;
     //pinWrite(PIN_FAN, (PinState)fan_on);
   }
+  btn1.update();
+  btn2.update();
+  btn3.update();
+  btn4.update();
 }
 
 ISR(PCINT1_vect) {
