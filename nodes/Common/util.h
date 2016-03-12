@@ -180,3 +180,64 @@ void timer2Setup(word frequency) {
   OCR2A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
 }
 */
+
+class Button {
+public:
+  Button(byte pin, PinState onState = LOW, byte debounce = 10) 
+    : _pin(pin), _debounce(debounce), _onState(onState), _up(false)
+  {
+
+  }
+  
+  void setup(bool pullup = true) {
+    pinMode(_pin, INPUT);
+    if (pullup) pinWrite(_pin, HIGH);
+  }
+
+  void update() {
+    if (pinRead(_pin) == _onState) {
+      if (_counter < _debounce) _counter++;
+      _up = true;
+    }
+    else {
+      if (_counter > 0) _counter--;
+      _up = false;
+    }
+  }
+
+  bool check() {
+    return (_up && _counter == _debounce) || (!_up && _counter > 0);
+  }
+
+private:
+  byte  _pin;
+  PinState  _onState;
+  byte  _counter;
+  bool  _up;
+  byte  _debounce;
+};
+
+class OutputPin {
+public:
+  OutputPin(byte pin, PinState onState = HIGH) 
+    : _pin(pin), _onState(onState)
+  {
+
+  }
+  
+  void setup() {
+    pinMode(_pin, OUTPUT);
+  }
+
+  void on() {
+    pinWrite(_pin, _onState);
+  }
+  
+  void off() {
+    pinWrite(_pin, (PinState)(!_onState));
+  }
+
+private:
+  byte  _pin;
+  PinState  _onState;
+};
