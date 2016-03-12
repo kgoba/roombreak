@@ -135,7 +135,7 @@ void loop() {
 //  else pinWrite(PIN_FAN, LOW);
     
   bus.poll();
-  _delay_ms(10);
+  _delay_ms(50);
 }
 
 ISR(TIMER2_OVF_vect) {
