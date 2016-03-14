@@ -22,21 +22,27 @@ class RPi:
   def __init__(self):
     self.rstPin = DigitalOutputDevice(self.PIN_NODE_RST)
     self.btnPin = DigitalInputDevice(self.PIN_START_BTN)
-    self.outPin = DigitalOutputDevice(self.PIN_EXIT_EN)
+    self.outPin = DigitalOutputDevice(self.PIN_EXIT_EN, active_high = False)
     self.snakeOnPin = DigitalOutputDevice(self.PIN_SNAKE_EN, active_high = False)
+    self.outPin.source = self.btnPin.values
     return
 
   def resetNetwork(self):
     self.rstPin.on()
     time.sleep(0.1)
     self.rstPin.off()
-    #self.rstPin.blink(on_time = 0.1, off_time = 0.1, background = False)
+    #self.rstPin.blink(on_time = 0.1, off_time = 0.1, background = True)
     return
 
   def setSnake(self, on):
     if on: self.snakeOnPin.on()
     else: self.snakeOnPin.off()
     return
+
+  def setDoors(self, on):
+    if on: self.outPin.on()
+    else: self.outPin.off()
+    return 
 
 def main(args):
   rpi = RPi()
@@ -47,9 +53,16 @@ def main(args):
   for cmd in args.command:
     if cmd == 'reset':
       rpi.resetNetwork()
+    if cmd == 'pause':
+      pause()
+    if cmd == 'open':
+      rpi.setDoors(True)
+    if cmd == 'close':
+      rpi.setDoors(False)
+    if cmd == 'snake':
+      rpi.setSnake(True)
 
-  #outPin.source = btnPin.values
-  #pause()
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
