@@ -57,8 +57,8 @@ bool Serial::open(const char *device, int baudrate)
   printf("File descriptor %d\n", _fd);
   if (_fd == -1) return false;
 
-  //::fcntl(_fd, F_SETFL, 0);   // blocking read
-  ::fcntl(_fd, F_SETFL, FNDELAY);   // non-blocking read
+  ::fcntl(_fd, F_SETFL, 0);   // blocking read
+  //::fcntl(_fd, F_SETFL, FNDELAY);   // non-blocking read
   
   struct termios options;
   ::tcgetattr(_fd, &options);
@@ -79,24 +79,45 @@ bool Serial::open(const char *device, int baudrate)
 void Serial::write(const char *data, int count)
 {
   // enable RS485 transmitter
-//  digitalWrite(_pinRXD, HIGH);
+  digitalWrite(_pinRXD, HIGH);
   digitalWrite(_pinTXE, HIGH);
   ::write(_fd, data, count);
-  ::tcflush(_fd, TCOFLUSH);
 }
 
 int Serial::read(char *data, int count)
 {
-  return ::read(_fd, data, count);
+  // Initialize file descriptor sets
+  fd_set read_fds, write_fds, except_fds;
+  FD_ZERO(&read_fds);
+  FD_ZERO(&write_fds);
+  FD_ZERO(&except_fds);
+  FD_SET(_fd, &read_fds);
+
+  // Set timeout to 5 ms
+  struct timeval timeout;
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 5000;
+
+  // Wait for input to become ready or until the time out; the first parameter is
+  // 1 more than the largest file descriptor in any of the sets
+  if (select(_fd + 1, &read_fds, &write_fds, &except_fds, &timeout) == 1)
+  {
+    // fd is ready for reading
+    return ::read(_fd, data, count);
+  }
+  else
+  {
+    // timeout or error
+    return 0;
+  }
 }
 
 void Serial::flush()
 {
-  //serialFlush(_fd);
-  //::ioctl(_fd, TCFLSH);
   // disable RS485 transmitter
+  ::tcflush(_fd, TCOFLUSH);
   digitalWrite(_pinTXE, LOW);
-//  digitalWrite(_pinRXD, LOW);
+  digitalWrite(_pinRXD, LOW);
 }
 
 int main()
@@ -107,10 +128,12 @@ int main()
   bool status = serial.open(kDevice, kBaudrate);
   if (!status) return 1;
 
-  for (int i = 0; i < 1000; i++) {
-    serial.write("test", 4);
+  char msg1[] = { 0xAF, 0x6A, 0xDE, 0x17, 0x7F, 0x00, 0xCE };
+  char msg2[] = { 0xAF, 0x6A, 0xDE, 0x17, 0x00, 0x00, 0xD4 };
+  for (int i = 0; i < 1; i++) {
+    serial.write(msg2, 7);
     usleep(10 * 1000);
-    //serial.flush();
+    serial.flush();
     usleep(500 * 1000);
 
     int recv;
@@ -120,7 +143,7 @@ int main()
       if (recv > 0) {
         printf("Received %d chars: ", recv);
         for (int j = 0; j < recv; j++) {
-          printf("%d ", buf[recv]);
+          printf("%02x ", buf[j]);
         }
         //write(STDOUT_FILENO, buf, recv);
         putchar('\n');
