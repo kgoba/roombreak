@@ -1,5 +1,7 @@
 #include <Common/ws2803s.h>
+#include <Common/pins.h>
 
+#include <util/delay.h>
 #include <avr/interrupt.h>
 #include <string.h>
 
@@ -71,17 +73,7 @@ const byte route4[] = { LED_CENTR, LED_UZVAR, LED_AUROR };
 
 Keypad keypad; // outPins, N_KEYPAD_COL, inPins, N_KEYPAD_ROW, (char *)keyTable);
 WS2803S leds(PIN_SDA, PIN_CLK, 2);
-
-void buzzOn(word freq)
-{
-  OCR0A = ((31250 + freq / 2) / freq) - 1;
-  bit_set(TCCR0A, COM0B0);
-}
-
-void buzzOff()
-{
-  bit_clear(TCCR0A, COM0B0);  
-}
+PWMPin<5> pinBuzzer;        // Timer0, pin 5 (OCR0B)
 
 void processKeyTest(char key) {
   static byte current;
@@ -103,9 +95,6 @@ void processKeyTest(char key) {
     current = 0;
   }
 }
-
-#define N_BUFFER    4
-#define N_TICKETS   4
 
 void Task::processKey(char key) {
   static char buffer[N_BUFFER];
@@ -131,12 +120,18 @@ void Task::processKey(char key) {
 }
 
 void Task::setup() {
-  //serial.setup(19200, 2, 3);
+  pinBuzzer.setup();
+  pinBuzzer.setToggleFrequency(880);
+    
   leds.setup();
   keypad.setup();
   
   _config.load();
   _state = ENTERING;
+  
+  pinBuzzer.enableToggle();
+  _delay_ms(500);
+  pinBuzzer.disable();
 }
 
 void Task::loop() {
@@ -144,14 +139,15 @@ void Task::loop() {
   char key = keypad.getKey();
   
   if (key != 0 && key != last) {
-    buzzOn(880);
+    pinBuzzer.enableToggle();
     processKey(key);
   }
-  else buzzOff();
+  else pinBuzzer.disable();
+
   last = key;
 
   if (_state == ENTERED) {
-    byte iMap = 4;
+    byte iMap = 0;
     byte mask = 0x01;
     for (byte iLed = 0; iLed < 36; iLed++) {
       if (_config.tickets[_iEntered].ledMap[iMap] & mask) {
@@ -160,12 +156,16 @@ void Task::loop() {
       mask <<= 1;
       if (!mask) {
         mask = 0x01;
-        iMap--;
+        iMap++;
       }
     }
     _state = ENTERING;
     leds.update();
   }
+}
+
+void Task::tick() {
+  
 }
 
 void setArrayBit(byte *array, byte idx) {
@@ -178,12 +178,12 @@ void Config::load() {
   byte ledMap1[] = {0x00, 0x00, 0x00, 0x00, 0x00};
   byte ledMap2[] = {0x00, 0x00, 0x00, 0x00, 0x00};
   byte ledMap3[] = {0x00, 0x00, 0x00, 0x00, 0x00};
-  byte ledMap4[] = {0x03, 0x00, 0x00, 0x00, 0x00};
+  byte ledMap4[] = {0x00, 0x00, 0x00, 0x00, 0x00};
   
-  char number1[] = "1111";
-  char number2[] = "2222";
-  char number3[] = "3333";
-  char number4[] = "4444";
+  char number1[] = "AB1764";
+  char number2[] = "AC8498";
+  char number3[] = "BA2873";
+  char number4[] = "AA2699";
 
   for (byte idx1 = 0; idx1 < ARRAY_SIZE(route1); idx1++) setArrayBit(ledMap1, route1[idx1]);
   for (byte idx2 = 0; idx2 < ARRAY_SIZE(route2); idx2++) setArrayBit(ledMap2, route2[idx2]);

@@ -134,4 +134,13 @@ ISR(TIMER2_OVF_vect) {
   if (pinRead(PIN_SWITCH) == LOW) {
     bit_set(gFlags, FLAG_BUTTON);
   }
+
+  /*
+  static byte count;
+  count++;
+  if (count >= 10) {
+    OCR0B++;
+    count = 0;
+  }
+  */
 }

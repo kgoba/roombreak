@@ -19,12 +19,15 @@ using namespace RFIDConfig;
 // internal timing frequency in Hz
 #define TICK_FREQ       125
 
+#define BUZZ_TICKS      10
+
 // sensor pin numbers
 const byte kPinSense[] = { PIN_SENSE };
 const byte kPinEnable[] = { PIN_ENABLE };
 
 enum {
-  FLAG_DONE
+  FLAG_DONE,
+  FLAG_BUZZ
 };
 
 volatile byte gFlags;
@@ -80,7 +83,7 @@ void setup() {
   // Setup Timer2
   // Set CTC mode, TOP = OCRA, prescaler 1024
   // Overflow 125Hz (8ms), overflow interrupt enabled
-  TIMER2_SETUP(TIMER2_CTC, TIMER2_PRESCALER(TICK_FREQ));
+  TIMER2_SETUP(TIMER2_FAST_PWM_A, TIMER2_PRESCALER(TICK_FREQ));
   OCR2A = TIMER2_COUNTS(TICK_FREQ) - 1;
   TIMSK2 = (1 << TOIE2); 
 
@@ -90,20 +93,40 @@ void setup() {
   serial.enable();  
   bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
   
-  buzzerOn();
-  _delay_ms(1000);
-  buzzerOff();
+  //buzzerOn();
+  //_delay_ms(1000);
+  //buzzerOff();
+  bit_set(gFlags, FLAG_BUZZ);
 }
 
 
 void loop() {  
   // DO SOMETHING
 
+  bool found = false;
+  for (byte iPin = 0; iPin < ARRAY_SIZE(kPinEnable); iPin++) {
+    if (pinRead(kPinSense[iPin]) == HIGH) {
+      found = true;
+    }
+  }
+  if (found) bit_set(gFlags, FLAG_BUZZ);
+
   bus.poll();
-  _delay_ms(100);
+  _delay_ms(50);
 }
 
 ISR(TIMER2_OVF_vect) {
+  static word buzzCounter;
+  if (bit_check(gFlags, FLAG_BUZZ)) {
+    bit_set(TCCR0A, COM0B1);
+    buzzCounter = BUZZ_TICKS;
+    bit_clear(gFlags, FLAG_BUZZ);
+  }
+  
+  if (buzzCounter > 0) {
+    buzzCounter--;
+    if (!buzzCounter) bit_clear(TCCR0A, COM0B1);
+  }
   /*
   if (gMillis >= 8) gMillis -= 8;
   else {

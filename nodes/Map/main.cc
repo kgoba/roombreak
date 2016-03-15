@@ -12,15 +12,15 @@
 
 using namespace MapConfig;
 
-// Timer tick frequency in Hz
+// Timer tick frequency in Hz (exact: 125, 250, 500, 1000) (16000000 = 5*5*5 * 5*5*5 * 16)
 #define TICK_FREQ   125
 
 #define PIN_BUZZER  5 // PWM
 /*
 Uzdevums:
 
-Savadīt 4 biļetes pareizā secībā. 
-Biļetes nr. ir 4 simboli, ko ievada ar keypad. Nospiežot pogu, ir skaņas indikācija.
+Ievadīt 4 biļetes pareizā secībā. 
+Biļetes nr. ir 6 simboli, ko ievada ar keypad. Nospiežot pogu, ir skaņas indikācija.
 Pēc katras pareizās biļetes ievadīšanas atskan skaņas indikācija un iedegas noteikti LED.
 Ievadot jebko nepareizu, atgriežas sākuma stāvoklī.
 Pēc 4 pareizu biļešu ievadīšanas atskan skaņas indikācija (globāla?) un uzdevums ir atrisināts.
@@ -74,27 +74,20 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
   return 0;
 }
 
-PWMPin<5> pinBuzzer;
 
-void setup() {
-  pinBuzzer.setup(440);
-  pinBuzzer.set(true);
-  _delay_ms(500);
-  pinBuzzer.set(false);
-  
-  //pinMode(PIN_BUZZER, OUTPUT);
+void setup() {  
   // Setup Timer0
   // Set CTC mode, TOP = OCRA, prescaler 256 (4us)
-  TCCR0A = (1 << WGM01);
-  TCCR0B = (1 << CS02);
+  //TCCR0A = (1 << WGM01);
+  //TCCR0B = (1 << CS02);
 
   // Setup Timer2
   // Set CTC mode, TOP = OCRA, prescaler 1024
   // Overflow 125Hz (8ms), overflow interrupt enabled
-  TCCR2A = (1 << WGM21) | (1 << WGM20);
-  TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20) | (1 << WGM22);
-  TIMSK2 = (1 << TOIE2); 
-  OCR2A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
+  TIMER2_SETUP(TIMER2_CTC, TIMER2_PRESCALER(TICK_FREQ));
+  OCR2A = TIMER2_COUNTS(TICK_FREQ) - 1;
+  bit_set(TIMSK2, OCIE2A);
+  //bit_set(TIMSK2, TOIE2);
   
   task.setup();
 
@@ -111,7 +104,10 @@ void loop() {
 }
 
 
-ISR(TIMER2_OVF_vect) {
+ISR(TIMER2_COMPA_vect) {
+  //gMillis += (1000 / TICK_FREQ);
+  task.tick();
+  
   /*
   if (gMillis >= 8) gMillis -= 8;
   else {

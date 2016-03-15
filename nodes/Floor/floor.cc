@@ -9,7 +9,8 @@
 
 using namespace FloorConfig;
 
-#define PIN_SENSE       19, 18, 17, 16, 15, 14, 7, 8, 10, 11
+//#define PIN_SENSE       19, 18, 17, 16, 15, 14, 7, 8, 10, 11
+#define PIN_SENSE       19, 18, 17, 16, 15, 14
 
 // IO expander control pins
 #define PIN_SDA           13
@@ -47,6 +48,9 @@ enum {
   kCLOSING
 };
 
+byte gSensorState;
+byte gSensorMask = 0xFF;
+
 volatile byte gFlags;
 volatile word gMillis;
 byte gState;
@@ -66,6 +70,23 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
     case CMD_DONE:
     {
       break;      
+    }
+    
+    case CMD_SENSORSTATE:
+    {
+      busParams[0] = gSensorState;
+      *nResults = 1;
+      break;
+    }
+
+    case CMD_SENSORMASK:
+    {
+      if (nParams > 0) {
+        gSensorMask = busParams[0];
+      }
+      busParams[0] = gSensorMask;
+      *nResults = 1;
+      break;
     }
     
     default:
@@ -111,14 +132,19 @@ void loop() {
   static byte sound = 0;
   
   // DO SOMETHING
-  bool found = false;
+  bool trigger = false;
   for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++) {
-    if (pinRead(pinSense[idx]) == LOW) {
-      found = true;
-      break;
+    bool newState = (pinRead(pinSense[idx]) == LOW);
+    bool lastState = bit_check(gSensorState, idx);
+    if (newState && !lastState && bit_check(gSensorMask, idx)) {
+      trigger = true;
     }
+    if (newState) bit_set(gSensorState, idx);
+    else bit_clear(gSensorState, idx);
+
+    //break;    // FIXME: quick test patch
   }
-  if (found) {
+  if (trigger) {
     player1.play(1);
     //_delay_ms(10);
     //player1.stop();
@@ -128,7 +154,7 @@ void loop() {
   }
 
   bus.poll();
-  _delay_ms(10);
+  _delay_ms(50);
 }
 
 ISR(TIMER2_OVF_vect) {

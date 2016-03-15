@@ -19,7 +19,13 @@ enum {
   FLAG_BLINK
 };
 
+enum {
+  STATE_INIT,
+  STATE_OPEN
+};
+
 volatile byte gFlags;
+volatile byte gState;
 
 P2K task;
 
@@ -47,6 +53,8 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
 }
 
 void setup() {
+  gState = STATE_INIT;
+  
   pinMode(PIN_OPEN, OUTPUT);
   
   // Setup Timer0
@@ -80,8 +88,15 @@ void loop() {
     }
     open = task.getButton(0, 0);
     
-    if (open) pinWrite(PIN_OPEN, HIGH);
-    else pinWrite(PIN_OPEN, LOW);
+    if (open && gState == STATE_INIT) {
+      pinWrite(PIN_OPEN, HIGH);
+      _delay_ms(100);
+      pinWrite(PIN_OPEN, LOW);
+      gState = STATE_OPEN;
+    }
+    if (!open && gState == STATE_OPEN) {
+      gState = STATE_INIT;
+    }
     
     //task.setLED(led, phase);      
     if (++led >= 10) {
