@@ -136,8 +136,8 @@ class Bus:
     def getParameter(self, address, command, nRetries = 3):
         if not address in self.ADDRESS_MAP:
             return None
+        address = self.ADDRESS_MAP[address]
         for nTry in range(nRetries):
-            address = self.ADDRESS_MAP[address]
             packetOut = self.makePacket(address, command)
             self.send(packetOut)
             packetIn = self.receivePacket()
@@ -155,7 +155,7 @@ class Bus:
             return None
         data = self.makePacket(self.ADDRESS_MAP[address], self.CMD_REBOOT)
         self.send(data)
-        recv = self.receive(8)
+        #recv = self.receive(8)
         return
         
     def send(self, data):

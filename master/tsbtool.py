@@ -11,7 +11,7 @@ import sys
 from bus import CRC
 from bus import Bus
 
-logging.basicConfig(level = logging.INFO)
+logging.basicConfig(level = logging.DEBUG)
 
 parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
