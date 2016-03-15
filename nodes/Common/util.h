@@ -44,7 +44,6 @@ word adcRead(byte pin);
 
 #define TIMER0_SETUP(mode, prescaler) \
 { \
-  TCCR0A = (mode & 0x03); \
   uint8_t mode_b = ((mode & 0x04) << 1); \
   switch(prescaler) { \
     case 0UL: TCCR0B = TIMER0_STOP | mode_b; break; \
@@ -54,6 +53,7 @@ word adcRead(byte pin);
     case 256UL: TCCR0B = TIMER0_PRE256 | mode_b; break; \
     case 1024UL: TCCR0B = TIMER0_PRE1024 | mode_b; break; \
   } \
+  TCCR0A = (mode & 0x03); \
 }
 
 #define TIMER0_NORMAL         0
