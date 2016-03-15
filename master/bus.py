@@ -38,6 +38,15 @@ class CRC:
             rem = rem & mask
         return rem
 
+def prettyFormat(data, format = "hex"):
+    if format == "hex":
+        str = " ".join('%02X' % b for b in data)
+    elif format == "bin":
+        str = " ".join("{0:b}".format(b) for b in data)
+    else:
+        str = "?"
+    return '[' + str + '] (%d b)' % len(data)
+
 class Bus:
     N_RETRIES       = 5
     CMD_ECHO        = 0x00
@@ -62,15 +71,34 @@ class Bus:
         self.ser = serial
         self.crc = crc
         
-    def prettyFormat(self, data):
-        str = " ".join('%02X' % b for b in data)
-        return '[' + str + '] (%d b)' % len(data)
-        
-    def packet(self, address, cmd, params = bytearray()):
+    def makePacket(self, address, cmd, params = bytearray(), request = True):
+        if not request: cmd = cmd | 0x80
         data = bytearray(self.PREFIX + [address, cmd, len(params)])
         if params: data += params
         data.append(self.crc.compute(data))
         return data
+
+    def parsePacket(self, packet):
+        if not packet or len(packet) < len(self.PREFIX) + 2:
+            return None
+        if list(packet[0:len(self.PREFIX)]) != self.PREFIX:
+            return None
+        crc = self.crc.compute(packet[:-1])
+        if crc != packet[-1]:
+            return None         
+        
+        nParams = packet[len(self.PREFIX) + 2]
+        params = packet[len(self.PREFIX) + 3: -1]
+
+        if len(params) != nParams:
+            return None
+
+        address = packet[len(self.PREFIX)]
+        cmdReq = packet[len(self.PREFIX) + 1]
+        request = (cmdReq & 0x80) == 0
+        cmd = cmdReq & 0x7F
+        return (address, cmd, params, request)
+        
        
     def check(self, data, recv):
         if not recv or len(recv) < len(self.PREFIX) + 2:
@@ -85,21 +113,45 @@ class Bus:
         return crc == recv[-1]
 
     def getAddresses(self):
-	return self.ADDRESS_MAP.keys()
+        return self.ADDRESS_MAP.keys()
 
     def echo(self, address):
         if not address in self.ADDRESS_MAP:
             return None
-        data = self.packet(self.ADDRESS_MAP[address], self.CMD_ECHO)
-        self.send(data)
-        recv = self.receive(len(data), nRetries = 1)
-        success = self.check(data, recv)
-        return success
+        address = self.ADDRESS_MAP[address]
+        packetOut = self.makePacket(address, self.CMD_ECHO)
+        self.send(packetOut)
+        packetIn = self.receive(len(packetOut), nRetries = 1)
+        packetIn = self.parsePacket(packetIn)
+        if not packetIn:
+            return False
+        
+        #logging.debug("Parsed packet: %s" % str(packetIn))
+        (address2, cmd2, params2, request2) = packetIn
+        
+        if (address2 != address) or (cmd2 != self.CMD_ECHO) or request2:
+            return False
+        return True
+
+    def getParameter(self, address, command):
+        if not address in self.ADDRESS_MAP:
+            return None
+        address = self.ADDRESS_MAP[address]
+        packetOut = self.makePacket(address, command)
+        self.send(packetOut)
+        packetIn = self.receivePacket()
+        packetIn = self.parsePacket(packetIn)
+        if not packetIn:
+            return False
+        (address2, cmd2, params2, request2) = packetIn
+        if (address2 != address) or (cmd2 != command) or request2:
+            return False
+        return params2
 
     def reboot(self, address):
         if not address in self.ADDRESS_MAP:
             return None
-        data = self.packet(self.ADDRESS_MAP[address], self.CMD_REBOOT)
+        data = self.makePacket(self.ADDRESS_MAP[address], self.CMD_REBOOT)
         self.send(data)
         recv = self.receive(8)
         return
@@ -108,21 +160,31 @@ class Bus:
         #self.ser.rts = True
         self.ser.write(data)
         self.ser.flush()
-        logging.debug("Sent %s" % self.prettyFormat(data))
+        logging.debug("Sent %s" % prettyFormat(data))
         #self.ser.rts = False
         return
 
     def receive(self, size, nRetries = 3):
         for i in range(nRetries):
             recv = bytearray(self.ser.read(size))
-            logging.debug("Recv %s" % self.prettyFormat(recv))
+            logging.debug("Recv %s" % prettyFormat(recv))
             if not recv:
                 continue
             if len(recv) == size:
                 return recv
             break
         return None
-        
+
+    def receivePacket(self, nRetries = 3):
+        result = ""
+        while True:
+            recv = self.ser.read()
+            if not recv:
+                result = bytearray(result)
+                logging.debug("Recv %s" % prettyFormat(result))
+                return result
+            result += recv
+                    
     def wait(self, data, nRetries = 3):
         for i in range(nRetries):
             recv = self.ser.read(len(data))
@@ -165,6 +227,12 @@ def main(args):
                 logging.warning("%s: FAILED" % addr)
             time.sleep(0.1)
 
+  if args.get:
+      logging.info("Getting parameter %d" % args.get)
+      for i in range(args.repeat):
+          params = bus.getParameter(args.node, args.get)
+          logging.info("Got %s" % prettyFormat(params, "hex"))
+
   if args.reboot:
       logging.info("Rebooting...")
       bus.reboot(args.node)
@@ -179,6 +247,7 @@ if __name__ == "__main__":
   parser.add_argument('-e', '--echo', help = 'Ping node for echo', action = 'store_true', default = False)
   parser.add_argument('-r', '--repeat', help = 'Repeat N times', type = int, default = 1)
   parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
+  parser.add_argument('-g', '--get', help = 'Get parameter', type = int)
 
   args = parser.parse_args(sys.argv[1:])
   
