@@ -249,7 +249,7 @@ if args.connect != None:
 
     logging.info("Rebooting...")
     bus.reboot(args.connect)
-    time.sleep(0.5)
+    time.sleep(0.25)
 
     logging.info("Connecting...")
     if not tsb.connect(args.connect):
