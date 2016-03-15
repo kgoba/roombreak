@@ -133,20 +133,22 @@ class Bus:
             return False
         return True
 
-    def getParameter(self, address, command):
+    def getParameter(self, address, command, nRetries = 3):
         if not address in self.ADDRESS_MAP:
             return None
-        address = self.ADDRESS_MAP[address]
-        packetOut = self.makePacket(address, command)
-        self.send(packetOut)
-        packetIn = self.receivePacket()
-        packetIn = self.parsePacket(packetIn)
-        if not packetIn:
-            return False
-        (address2, cmd2, params2, request2) = packetIn
-        if (address2 != address) or (cmd2 != command) or request2:
-            return False
-        return params2
+        for nTry in range(nRetries):
+            address = self.ADDRESS_MAP[address]
+            packetOut = self.makePacket(address, command)
+            self.send(packetOut)
+            packetIn = self.receivePacket()
+            packetIn = self.parsePacket(packetIn)
+            if not packetIn:
+                continue
+            (address2, cmd2, params2, request2) = packetIn
+            if (address2 != address) or (cmd2 != command) or request2:
+                continue
+            return params2
+        return None
 
     def reboot(self, address):
         if not address in self.ADDRESS_MAP:
@@ -231,7 +233,11 @@ def main(args):
       logging.info("Getting parameter %d" % args.get)
       for i in range(args.repeat):
           params = bus.getParameter(args.node, args.get)
-          logging.info("Got %s" % prettyFormat(params, "hex"))
+          if params == None:
+              logging.error("No response")
+          else:
+              logging.info("Got %s" % prettyFormat(params, "hex"))
+          time.sleep(0.1)
 
   if args.reboot:
       logging.info("Rebooting...")
