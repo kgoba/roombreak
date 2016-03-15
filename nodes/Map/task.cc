@@ -26,42 +26,47 @@ enum {
   LED_KLEIS = 1,
   LED_LACUP = 3,
   LED_ILGUC = 4,
-  LED_KIPSA = 5,
+  LED_KIPSA = 5,  // ->LED_DRAUD
 
   LED_IMANT = 2,
   LED_ZOLIT = 9,
   LED_ZASUL = 10,
   LED_PLESK = 11,
   LED_AUROR = 12,
-  LED_UZVAR = 15,
+  LED_UZVAR = 15,   // ->LED_CENTR
 
   LED_DZINT = 13,
   LED_STRAU = 14,
-  LED_TELEC = 16,
+  LED_TELEC = 16,   // ->LED_CENTR
   
   LED_SKVAD = 17,
-  LED_KENGA = 27,
+  LED_KENGA = 27,   // ->LED_CENTR
 
   LED_DREIL = 26,
   LED_PLAVN = 25,
   LED_PURVC = 24,
-  LED_KIROV = 33,
+  LED_KIROV = 33,   // ->LED_DRAUD
 
   LED_JUGLA = 22,
   LED_ALFA  = 21,
   LED_TEIKA = 20,
   LED_VEF   = 19,
-  LED_OSKAL = 18,
+  LED_OSKAL = 18,   // ->LED_DRAUD
   
   LED_SDAUG = 29,
   LED_DIZEL = 30,
   LED_ENERG = 31,
-  LED_PETER = 32
+  LED_PETER = 32    // ->LED_DRAUD
 };
 
-const byte route1[] = { LED_ILGUC, LED_KIPSA, LED_DRAUD };
-const byte route2[] = { LED_DRAUD, LED_OSKAL, LED_VEF, LED_TEIKA };
-const byte route3[] = { LED_TEIKA, LED_VEF, LED_OSKAL, LED_DRAUD, LED_CENTR };
+//const byte route1[] = { LED_ILGUC, LED_KIPSA, LED_DRAUD };
+//const byte route2[] = { LED_DRAUD, LED_OSKAL, LED_VEF, LED_TEIKA };
+//const byte route3[] = { LED_TEIKA, LED_VEF, LED_OSKAL, LED_DRAUD, LED_CENTR };
+//const byte route4[] = { LED_CENTR, LED_UZVAR, LED_AUROR };
+
+const byte route1[] = { LED_ZASUL, LED_PLESK, LED_AUROR, LED_UZVAR, LED_CENTR };
+const byte route2[] = { LED_CENTR, LED_DRAUD, LED_KIPSA, LED_ILGUC, LED_LACUP, LED_KLEIS };
+const byte route3[] = { LED_CENTR, LED_DRAUD, LED_OSKAL, LED_VEF, LED_TEIKA, LED_ALFA, LED_JUGLA };
 const byte route4[] = { LED_CENTR, LED_UZVAR, LED_AUROR };
 
 Keypad keypad; // outPins, N_KEYPAD_COL, inPins, N_KEYPAD_ROW, (char *)keyTable);
@@ -163,31 +168,30 @@ void Task::loop() {
   }
 }
 
+void setArrayBit(byte *array, byte idx) {
+  byte nByte = idx / 8;
+  byte nBit = idx % 8;
+  array[nByte] |= (1 << nBit);
+}
+
 void Config::load() {
-  byte ledMap1[] = {0x00, 0x00, 0x00, 0x00, 0xFF};
-  byte ledMap2[] = {0x00, 0x00, 0x00, 0xFF, 0x00};
-  byte ledMap3[] = {0x00, 0x00, 0xFF, 0x00, 0x00};
-  byte ledMap4[] = {0x03, 0xFF, 0x00, 0x00, 0x00};
+  byte ledMap1[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+  byte ledMap2[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+  byte ledMap3[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+  byte ledMap4[] = {0x03, 0x00, 0x00, 0x00, 0x00};
+  
   char number1[] = "1111";
   char number2[] = "2222";
   char number3[] = "3333";
   char number4[] = "4444";
 
+  for (byte idx1 = 0; idx1 < ARRAY_SIZE(route1); idx1++) setArrayBit(ledMap1, route1[idx1]);
+  for (byte idx2 = 0; idx2 < ARRAY_SIZE(route2); idx2++) setArrayBit(ledMap2, route2[idx2]);
+  for (byte idx3 = 0; idx3 < ARRAY_SIZE(route3); idx3++) setArrayBit(ledMap3, route3[idx3]);
+  for (byte idx4 = 0; idx4 < ARRAY_SIZE(route4); idx4++) setArrayBit(ledMap4, route4[idx4]);
+
   tickets[0].init(ledMap1, number1);
   tickets[1].init(ledMap2, number2);
   tickets[2].init(ledMap3, number3);
   tickets[3].init(ledMap4, number4);
-}
-
-ISR(TIMER2_OVF_vect) {
-  /*
-  if (gMillis >= 8) gMillis -= 8;
-  else {
-    bit_set(gFlags, FLAG_TIMEOUT);
-  }
-  
-  if (pinRead(PIN_SWITCH) == LOW) {
-    bit_set(gFlags, FLAG_BUTTON);
-  }
-  */
 }

@@ -25,13 +25,6 @@ Keypad::Keypad()
 {
 }
 
-/*
-Keypad::Keypad(byte *outPins, byte nOut, byte *inPins, byte nIn, char *keyTable)
-  : _outPins(outPins), _nOut(nOut), _inPins(inPins), _nIn(nIn), _keyTable(keyTable)
-{
-}
-*/
-
 void Keypad::setup() {
   for (byte iOut = 0; iOut < _nOut; iOut++) {
     pinMode(_outPins[iOut], OUTPUT);

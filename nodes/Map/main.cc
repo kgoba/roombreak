@@ -2,6 +2,7 @@
 #include <Common/serial.h>
 #include <Common/modbus.h>
 #include <Common/util.h>
+#include <Common/pins.h>
 
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -14,19 +15,15 @@ using namespace MapConfig;
 // Timer tick frequency in Hz
 #define TICK_FREQ   125
 
+#define PIN_BUZZER  5 // PWM
 /*
-Hardware:
-- Keypad (4x4)
-- 1 izeja buzzerim
-- 2xWS2803 LED (36 gab.)
-
 Uzdevums:
 
 Savadīt 4 biļetes pareizā secībā. 
 Biļetes nr. ir 4 simboli, ko ievada ar keypad. Nospiežot pogu, ir skaņas indikācija.
 Pēc katras pareizās biļetes ievadīšanas atskan skaņas indikācija un iedegas noteikti LED.
 Ievadot jebko nepareizu, atgriežas sākuma stāvoklī.
-Pēc 4 pareizu biļešu ievadīšanas atskan skaņas indikācija un uzdevums ir atrisināts.
+Pēc 4 pareizu biļešu ievadīšanas atskan skaņas indikācija (globāla?) un uzdevums ir atrisināts.
 
 3 skaņas indikācijas:
 1) poga nospiesta
@@ -43,6 +40,10 @@ Uzdevuma konfigurācija:
 - 3. biļetes numurs (4 baiti)
 - 4. biļetes numurs (4 baiti)
 
+Hardware:
+- Keypad (4x4)
+- 1 izeja buzzerim
+- 2xWS2803 LED (36 gab.)
  */
 
 Task task;
@@ -73,8 +74,15 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
   return 0;
 }
 
+PWMPin<5> pinBuzzer;
+
 void setup() {
-  pinMode(5, OUTPUT);
+  pinBuzzer.setup(440);
+  pinBuzzer.set(true);
+  _delay_ms(500);
+  pinBuzzer.set(false);
+  
+  //pinMode(PIN_BUZZER, OUTPUT);
   // Setup Timer0
   // Set CTC mode, TOP = OCRA, prescaler 256 (4us)
   TCCR0A = (1 << WGM01);
@@ -100,4 +108,18 @@ void loop() {
   
   bus.poll();
   _delay_ms(20);
+}
+
+
+ISR(TIMER2_OVF_vect) {
+  /*
+  if (gMillis >= 8) gMillis -= 8;
+  else {
+    bit_set(gFlags, FLAG_TIMEOUT);
+  }
+  
+  if (pinRead(PIN_SWITCH) == LOW) {
+    bit_set(gFlags, FLAG_BUTTON);
+  }
+  */
 }
