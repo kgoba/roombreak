@@ -217,6 +217,8 @@ private:
   byte  _debounce;
 };
 
+/*
+
 class OutputPin {
 public:
   OutputPin(byte pin, PinState onState = HIGH) 
@@ -241,3 +243,4 @@ private:
   byte  _pin;
   PinState  _onState;
 };
+*/

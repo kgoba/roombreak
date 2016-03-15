@@ -61,6 +61,9 @@ namespace FloorConfig {
   const byte BUS_NPARAMS = 4;
   
   const word BOUNCE_US   = 2;
+  
+  const byte CMD_SENSORSTATE = 0x10;
+  const byte CMD_SENSORMASK  = 0x11;
 };
 
 namespace BombConfig {
@@ -106,4 +109,9 @@ namespace WCConfig {
 namespace DimmerConfig {
   const byte BUS_ADDRESS = ADDRESS_DIMMER;
   const byte BUS_NPARAMS = 4;
+  
+  const byte CMD_DIMMER1 = 0x10;
+  const byte CMD_DIMMER2 = 0x11;
+  const byte CMD_DIMMER3 = 0x12;
+  const byte CMD_DIMMER4 = 0x13;
 };
