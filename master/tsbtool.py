@@ -8,6 +8,9 @@ import rs485
 import time
 import sys
 
+from bus import CRC
+from bus import Bus
+
 logging.basicConfig(level = logging.INFO)
 
 parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
@@ -242,6 +245,12 @@ ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.5, writeTimeout = 0.5)
 tsb = TSB(ser)
 
 if args.connect != None:
+    bus = Bus(ser)
+
+    logging.info("Rebooting...")
+    bus.reboot(args.connect)
+    time.sleep(0.5)
+
     logging.info("Connecting...")
     if not tsb.connect(args.connect):
         logging.error("Connect failed")

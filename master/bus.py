@@ -58,7 +58,7 @@ class Bus:
         'DIMMER': 27
     }
     
-    def __init__(self, serial, crc):
+    def __init__(self, serial, crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)):
         self.ser = serial
         self.crc = crc
         
