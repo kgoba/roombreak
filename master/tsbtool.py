@@ -4,6 +4,7 @@ import argparse
 import logging
 import serial
 import struct
+import rs485
 import time
 import sys
 
@@ -236,7 +237,8 @@ def readHEX(stream):
     logging.debug('Read %d bytes from HEX file' % len(fdata))
     return fdata
 
-ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.5, write_timeout = 0.5, rtscts = False)
+#ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.5, write_timeout = 0.5, rtscts = False)
+ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.5, writeTimeout = 0.5)
 tsb = TSB(ser)
 
 if args.connect != None:
