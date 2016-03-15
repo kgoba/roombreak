@@ -15,7 +15,7 @@ TARGET 	= testAtom
 SRC 	= main.cc
 CXXFLAGS = -g -mmcu=$(MCU) -Os -DF_CPU=$(F_CPU) -fdata-sections -ffunction-sections -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -fno-inline-small-functions
 INCLUDES = -I../../atomthreads/kernel -I../../atomthreads/ports/avr
-LFLAGS = -g -mmcu=$(MCU) -L. -Wl,--relax,--gc-sections
+LFLAGS = -g -mmcu=$(MCU) -L../../atomthreads/ports/avr -Wl,--relax,--gc-sections
 LIBS = -latomthreads-avr 
 
 OBJ = $(SRC:.cc=.o)
