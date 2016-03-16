@@ -6,10 +6,12 @@ SUBCLEAN = $(addsuffix .clean, $(SUBDIRS))
 all: $(SUBDIRS)
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	@echo "Building $@..."
+	@$(MAKE) -C $@
 
 clean: $(SUBCLEAN)
 
 $(SUBCLEAN): %.clean:
-	$(MAKE) -C $* clean
+	@echo "Cleaning $*..."
+	@$(MAKE) -C $* clean
 

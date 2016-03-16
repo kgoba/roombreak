@@ -10,22 +10,26 @@ OBJ = $(SRC:.cc=.o)
 .PHONY: all clean fuse program
 
 all: $(TARGET).hex $(TARGET).lst
+	@echo "  Built successfully"
 
 clean:
-	rm -f $(TARGET).hex $(TARGET).lst $(TARGET).elf $(OBJ)
+	@echo "  Cleaning all"
+	@rm -f $(TARGET).hex $(TARGET).lst $(TARGET).elf $(OBJ)
 
 $(TARGET).hex: $(TARGET).elf
-	$(OBJCOPY) -j .text -j .data -O ihex $(TARGET).elf $(TARGET).hex
+	@$(OBJCOPY) -j .text -j .data -O ihex $(TARGET).elf $(TARGET).hex
 
 $(TARGET).lst: $(TARGET).elf
-	$(OBJDUMP) -h -S $(TARGET).elf >$(TARGET).lst
+	@$(OBJDUMP) -h -S $(TARGET).elf >$(TARGET).lst
 
 $(TARGET).elf: $(OBJ) ../Common/libcommon.a
-	$(LD) -o $@ $(OBJ) $(LFLAGS) $(LIBS)
-	$(SIZE) $@
+	@echo "  Linking..."
+	@$(LD) -o $@ $(OBJ) $(LFLAGS) $(LIBS)
+	@$(SIZE) $@
 
 .cc.o:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	@echo "  Compiling @<..."
+	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 fuse:
 	avrdude -p $(MCU) -c $(PROGRAMMER) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(XFUSE):m

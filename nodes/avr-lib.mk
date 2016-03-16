@@ -10,15 +10,19 @@ OBJ = $(SRC:.cc=.o)
 .PHONY: all clean fuse program
 
 all: $(TARGET).a
+	@echo "  Library built successfully"
 
 clean:
-	rm -f $(TARGET).a $(OBJ)
+	@echo "  Cleaning all..."
+	@rm -f $(TARGET).a $(OBJ)
 
 $(TARGET).a: $(OBJ)
-	$(AR) rcs $@ $^
+	@echo "  Linking..."
+	@$(AR) rcs $@ $^
 #	$(LD) -o $@ $(OBJ) $(LFLAGS) $(LIBS)
-	$(SIZE) -t $@
+	@$(SIZE) -t $@
 
 .cc.o:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	@echo "  Compiling $<..."
+	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
