@@ -12,6 +12,9 @@
 #define bit_mask3(b1, b2, b3)   ((1 << b1) | (1 << b2) | (1 << b3))
 #define bit_mask4(b1, b2, b3, b4)   ((1 << b1) | (1 << b2) | (1 << b3) | (1 << b4))
 
+#define WORD_LO(x)            ((x) & 0xFF)
+#define WORD_HI(x)            (((x) >> 8) & 0xFF)
+
 enum PinState {
   LOW, HIGH
 };

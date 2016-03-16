@@ -8,8 +8,14 @@
 #define PIN_TXE         2
 #define PIN_RXD         3
 
+// Loop delay in ms (roughly period)
+#define LOOP_DELAY_MS   20
+
 // RS-485 bus speed
 #define BUS_SPEED       19200
+
+// Maximum number of bytes in the parameter field
+#define BUS_NPARAMS     4
 
 // Individual node addresses
 #define ADDRESS_PBX     17
@@ -25,11 +31,11 @@
 #define ADDRESS_DIMMER  27
 
 // Broadcast address
-#define ADDRESS_ALL     0xFF
+#define ADDRESS_ALL     0xFF      // Use this to broadcast to all nodes (no reply is sent)
 
 // Common commands
-#define CMD_INIT        0x01      // Init (reset) task
-#define CMD_DONE        0x02      // Query if task is done or force it
+#define CMD_INIT        0x01      // Write 1 to reset task, reads 0 while initializing, 1 when initialized successfully
+#define CMD_DONE        0x02      // Query if task is done or force it by writing 1
 
 #define CMD_ECHO        0x00      // Echo back the same parameters
 #define CMD_REBOOT      0x7F      // Software reset to bootloader
@@ -46,7 +52,6 @@
 
 namespace KeyConfig {
   const byte BUS_ADDRESS = ADDRESS_KEY;
-  const byte BUS_NPARAMS = 4;
   
   // servo PPM time in microseconds for 2 positions
   const word PPM_CLOSED_US  = (1500 - 300);
@@ -58,7 +63,6 @@ namespace KeyConfig {
 
 namespace FloorConfig {
   const byte BUS_ADDRESS = ADDRESS_FLOOR;
-  const byte BUS_NPARAMS = 4;
   
   const word BOUNCE_US   = 2;
   
@@ -68,47 +72,66 @@ namespace FloorConfig {
 
 namespace BombConfig {
   const byte BUS_ADDRESS = ADDRESS_BOMB;
-  const byte BUS_NPARAMS = 4;
 };
 
 namespace MapConfig {
   const byte BUS_ADDRESS = ADDRESS_MAP;
-  const byte BUS_NPARAMS = 4;
+  
+  const byte CMD_TICKET1 = 0x10;
+  const byte CMD_TICKET2 = 0x11;
+  const byte CMD_TICKET3 = 0x12;
+  const byte CMD_TICKET4 = 0x13;
+
+  const byte CMD_ROUTE1  = 0x20;
+  const byte CMD_ROUTE2  = 0x21;
+  const byte CMD_ROUTE3  = 0x22;
+  const byte CMD_ROUTE4  = 0x23;
+  
+  const byte CMD_LASTKEY = 0x30;
 };
 
 namespace RFIDConfig { 
   const byte BUS_ADDRESS = ADDRESS_RFID;
-  const byte BUS_NPARAMS = 4;
 };
 
 namespace ValveConfig {
   const byte BUS_ADDRESS = ADDRESS_VALVE;
-  const byte BUS_NPARAMS = 4;
+  
+  const byte CMD_DIGIT   = 0x10;
+
+  const word COUNT_THRESHOLD  = 100;
+
+  const int8_t VALVE1_CW      = -5;
+  const int8_t VALVE1_CCW     = +7;
+
+  const int8_t VALVE2_CW      = +6;
+  const int8_t VALVE2_CCW     = -3;
+
+  const int8_t VALVE3_CW      = +5;
+  const int8_t VALVE3_CCW     = -6;
+
+  const byte DIGIT_START = 0;
+  const byte DIGIT_END   = 9;
 };
 
 namespace PlayerConfig { 
   const byte BUS_ADDRESS = ADDRESS_PLAYER;
-  const byte BUS_NPARAMS = 4;
 };
 
 namespace P2KConfig {
   const byte BUS_ADDRESS = ADDRESS_P2K;
-  const byte BUS_NPARAMS = 4;
 };
 
 namespace PBXConfig {
   const byte BUS_ADDRESS = ADDRESS_PBX;
-  const byte BUS_NPARAMS = 4;
 };
 
 namespace WCConfig {
   const byte BUS_ADDRESS = ADDRESS_WC;
-  const byte BUS_NPARAMS = 4;
 };
 
 namespace DimmerConfig {
   const byte BUS_ADDRESS = ADDRESS_DIMMER;
-  const byte BUS_NPARAMS = 4;
   
   const byte CMD_DIMMER1 = 0x10;
   const byte CMD_DIMMER2 = 0x11;
