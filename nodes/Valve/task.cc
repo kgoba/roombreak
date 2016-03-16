@@ -2,6 +2,7 @@
 #include <Common/serial.h>
 #include <Common/modbus.h>
 #include <Common/util.h>
+#include <Common/task.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -24,6 +25,11 @@ using namespace ValveConfig;
 #define PPM_MAX_US      (PPM_NEUTRAL_US + 560)
 #define PPM_MIN_US      (PPM_NEUTRAL_US - 560)
 
+#define POSITIONS       0x0708, 0x06B0, 0x062C, 0x05B8, 0x0560, 0x04F2, 0x0490, 0x0424, 0x03AE, 0x0352, 0x02F4
+
+
+const word ppmDigitUs[] = { POSITIONS };
+
 enum {
   FLAG_DONE,
   FLAG_TIMEOUT
@@ -31,64 +37,56 @@ enum {
 
 volatile byte gFlags;
 volatile word gMillis;
-volatile word gCounts[3];
+volatile int16_t gCounts[3];
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+int8_t gDigit;
+byte gTaskDone;
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void servoOn();
+void servoOff();
+void servoSet(word ppm_us);
+
+byte taskIsDone() {
+  return gTaskDone;
+}
+
+void taskRestart() {
+  gCounts[0] = 0;
+  gCounts[1] = 0;
+  gCounts[2] = 0;
+
+  gDigit = DIGIT_START;
+  gTaskDone = 0;
+}
+
+void taskComplete() {
+  if (taskIsDone()) return;
+  // task is complete
+  gDigit = 9;
+  gTaskDone = 1;
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
-  switch (cmd) {
-    case CMD_INIT:
+  switch (cmd) {    
+    case CMD_DIGIT:
     {
-      break;      
+      if (nParams > 0) {
+        gDigit = busParams[0];
+      }
+      *nResults = 1;
+      busParams[0] = gDigit;
+      //busParams[0] = WORD_LO(ppm_us);
+      //busParams[1] = WORD_HI(ppm_us);
     }
-    
-    case CMD_DONE:
-    {
-      break;      
-    }
-    
-    default:
-    break;
   }
   return 0;
 }
 
-void servoOn()
-{
-  pinWrite(PIN_PWM, LOW);
-  bit_set(TCCR1A, COM1A1);
-}
-
-void servoOff()
-{
-  bit_clear(TCCR1A, COM1A1);
-  pinWrite(PIN_PWM, LOW);
-}
-
-void servoSet(word ppm_us)
-{
-  OCR1A = ((ppm_us * PPM_FREQ) / 1000UL * TIMER1_COUNTS(PPM_FREQ)) / 1000UL;
-}
-
-void setup() {
+void setup() {  
   // setup IO pins
   pinMode(PIN_PWM, OUTPUT);
-  
-  // Setup Timer0
-  // Set Fast PWM mode, TOP = OCRA, prescaler 1024 (64us)
-  // PWM period 16ms
-  //TIMER0_SETUP(TIMER0_FAST_PWM_A, TIMER0_PRESCALER(PPM_FREQ));
-  //TIMER0_SETUP(TIMER0_FAST_PWM_A, 1024UL);
-  //TCCR0A = (1 << WGM01) | (1 << WGM00);
-  //TCCR0B = (1 << CS02) | (1 << CS00) | (1 << WGM02);
-  //OCR0A = 250 - 1;
-  //OCR0A = TIMER0_COUNTS(PPM_FREQ) - 1;
-  
-  int a = 1 / TIMER1_COUNTS(PPM_FREQ);
-  
+    
   TIMER1_SETUP(TIMER1_PWM_FAST_ICR, TIMER1_PRESCALER(PPM_FREQ));
   ICR1 = TIMER1_COUNTS(PPM_FREQ) - 1;
   
@@ -102,11 +100,14 @@ void setup() {
 
   //gState = kINIT;
   servoOn();
+  servoSet(PPM_MIN_US);
+  _delay_ms(1000);
+  servoSet(PPM_MAX_US);
+  _delay_ms(1000);
   servoSet(PPM_NEUTRAL_US);
-
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  
+  taskSetup(BUS_ADDRESS);
+  taskRestart();
 }
 
 void loop() {
@@ -115,67 +116,57 @@ void loop() {
     bit_clear(gFlags, FLAG_TIMEOUT);
   }
 
-  static word ppm_us = PPM_NEUTRAL_US;
-  static word lastCount;
+  if (gCounts[0] > COUNT_THRESHOLD) {
+    gDigit += VALVE1_CW;
+    gCounts[0] = 0;
+  }
+  else if (gCounts[0] < -COUNT_THRESHOLD) {
+    gDigit += VALVE1_CCW;
+    gCounts[0] = 0;    
+  }
   
-  word now = gCounts[0] + gCounts[1] + gCounts[2];
-  word diff = now - lastCount;
-  lastCount = now;
+  if (gCounts[1] > COUNT_THRESHOLD) {
+    gDigit += VALVE2_CCW;
+    gCounts[1] = 0;
+  }
+  else if (gCounts[1] < -COUNT_THRESHOLD) {
+    gDigit += VALVE2_CW;
+    gCounts[1] = 0;    
+  }  
 
-  ppm_us += 2 * diff;
-  if (ppm_us > PPM_MAX_US) ppm_us = PPM_MAX_US;
-  else if (ppm_us < PPM_MIN_US) ppm_us = PPM_MIN_US;
-  servoSet(ppm_us);
+  if (gCounts[2] > COUNT_THRESHOLD) {
+    gDigit += VALVE3_CW;
+    gCounts[2] = 0;
+  }
+  else if (gCounts[2] < -COUNT_THRESHOLD) {
+    gDigit += VALVE3_CCW;
+    gCounts[2] = 0;    
+  }
   
-  bus.poll();
-  _delay_ms(10);
+  if (gDigit > 10) gDigit = 10;
+  if (gDigit < 0) gDigit = 0;
+  
+  if (gDigit == DIGIT_END) {
+    taskComplete();
+  }
+  
+  servoSet(ppmDigitUs[gDigit]);
+  
+  taskLoop();
 }
 
-ISR(TIMER2_OVF_vect) {
-  //static word ppm_us = PPM_NEUTRAL_US;
-  //static int16_t ppm_dir = 64;
-  static byte ppm_dir = 1;
-  
+ISR(TIMER2_OVF_vect) {  
   gMillis += (1000UL / TICK_FREQ);
   //gMillis += 8;
   if (gMillis >= 3000) {
     gMillis -= 3000;
     bit_set(gFlags, FLAG_TIMEOUT);
-    
-    /*
-    if (ppm_dir) {
-      servoSet(PPM_MAX_US);      
-    }
-    else {
-      servoSet(PPM_MIN_US);
-    }
-    ppm_dir = !ppm_dir;
-    */
-    
-    /*
-    servoSet(ppm_us);    
-    ppm_us += ppm_dir;
-    if (ppm_us > PPM_MAX_US) {
-      ppm_dir = -ppm_dir;
-      ppm_us = PPM_MAX_US;
-    }
-    else if (ppm_us < PPM_MIN_US) {
-      ppm_dir = -ppm_dir;
-      ppm_us = PPM_MIN_US;
-    }
-    */
   }
-  
-  /*
-  if (pinRead(PIN_SWITCH) == LOW) {
-    bit_set(gFlags, FLAG_BUTTON);
-  }
-  */
 }
 
 ISR(PCINT1_vect) {
   static byte lastState;
-  byte state = (PINC & 0x3F);
+  byte state = (PINC & 0x3F);     // 6 bits = 3 channels x 2 bits quadrature
 
   byte tNow = state;
   byte tLast = lastState;
@@ -198,4 +189,21 @@ ISR(PCINT1_vect) {
     gCounts[idx] += dir;
   }
   lastState = state;
+}
+
+void servoOn()
+{
+  pinWrite(PIN_PWM, LOW);
+  bit_set(TCCR1A, COM1A1);
+}
+
+void servoOff()
+{
+  bit_clear(TCCR1A, COM1A1);
+  pinWrite(PIN_PWM, LOW);
+}
+
+void servoSet(word ppm_us)
+{
+  OCR1A = ((ppm_us * PPM_FREQ) / 1000UL * TIMER1_COUNTS(PPM_FREQ)) / 1000UL;
 }

@@ -2,6 +2,7 @@
 #include <Common/serial.h>
 #include <Common/modbus.h>
 #include <Common/util.h>
+#include <Common/task.h>
 #include <Common/audioplayer.h>
 
 #include <util/delay.h>
@@ -23,6 +24,9 @@ using namespace FloorConfig;
 #define XPIN_TRSEL3  17
 #define XPIN_TRSEL4  16
 
+// 6 sensors
+#define SENSOR_MASK   0x3F
+
 WS2803S ioExpander(PIN_SDA, PIN_CLK);
 AudioPlayer player1(ioExpander, XPIN_TRSEL0, XPIN_TRSEL1, XPIN_TRSEL2, XPIN_TRSEL3, XPIN_TRSEL4);
 
@@ -41,37 +45,37 @@ enum {
   FLAG_DONE
 };
 
-enum {
-  kINIT,
-  kCLOSED,
-  kOPENING,
-  kCLOSING
-};
-
 byte gSensorState;
-byte gSensorMask = 0xFF;
+byte gSensorMask = SENSOR_MASK;
+byte gSensorDone;
 
 volatile byte gFlags;
 volatile word gMillis;
-byte gState;
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+void servoOn();
+void servoOff();
+void servoSet(word ppm_us);
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+byte taskIsDone() {
+  return gSensorDone == gSensorMask;
+}
+
+void taskRestart() {
+  gSensorDone = 0;
+  gSensorState = 0;
+  //bit_clear(gFlags, FLAG_DONE);
+}
+
+void taskComplete() {
+  if (taskIsDone()) return;
+  // task is complete
+  gSensorDone = gSensorMask;
+  //bit_set(gFlags, FLAG_DONE);
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
-  switch (cmd) {
-    case CMD_INIT:
-    {
-      break;      
-    }
-    
-    case CMD_DONE:
-    {
-      break;      
-    }
-    
+  switch (cmd) {    
     case CMD_SENSORSTATE:
     {
       busParams[0] = gSensorState;
@@ -88,22 +92,9 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
       *nResults = 1;
       break;
     }
-    
-    default:
-    break;
   }
   return 0;
 }
-
-/*
-void audioPlay(byte track) {
-  byte mask = 1;
-  for (byte idx = 0; idx < ARRAY_SIZE(PIN_PLAYER); idx++) {
-    pinWrite(PIN_PLAYER[idx], (track & mask) ? HIGH : LOW);
-    mask <<= 1;
-  }
-}
-*/
 
 void setup() {
   for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++)
@@ -117,44 +108,41 @@ void setup() {
   TIMSK2 = (1 << TOIE2); 
   OCR2A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
 
-  gState = kINIT;
-
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
-  
   ioExpander.setup();
   player1.setup();
+  
+  taskSetup(BUS_ADDRESS);
+  taskRestart();
 }
 
-
-void loop() {
-  static byte sound = 0;
-  
+void loop() {  
   // DO SOMETHING
-  bool trigger = false;
+  bool triggerSound = false;
   for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++) {
     bool newState = (pinRead(pinSense[idx]) == LOW);
     bool lastState = bit_check(gSensorState, idx);
-    if (newState && !lastState && bit_check(gSensorMask, idx)) {
-      trigger = true;
+    if (newState && !lastState && bit_check(gSensorMask, idx) && !bit_check(gSensorDone, idx)) {
+      triggerSound = true;
+      bit_set(gSensorDone, idx);
     }
-    if (newState) bit_set(gSensorState, idx);
-    else bit_clear(gSensorState, idx);
-
-    //break;    // FIXME: quick test patch
+    if (newState) {
+      bit_set(gSensorState, idx);
+    }
+    else {
+      bit_clear(gSensorState, idx);
+    }
   }
-  if (trigger) {
+  if (triggerSound) {
     player1.play(1);
-    //_delay_ms(10);
-    //player1.stop();
   }
   else {
     player1.stop();    
   }
+  if (gSensorDone == gSensorMask) {
+    taskComplete();
+  }
 
-  bus.poll();
-  _delay_ms(50);
+  taskLoop();
 }
 
 ISR(TIMER2_OVF_vect) {
