@@ -74,17 +74,21 @@ if (pin.get()) doSomething();
 
  */
 
-template<int pin, bool activeLOW = false>
+typedef enum { kLow = 0, kHigh = 1 } LogicLevel;
+typedef enum { kNoPullup = 0, kPullup = 1 } PullupMode;
+
+template<int pin, LogicLevel activeLevel = kHigh>
 class InputPin : public IOPin<pin> {
 public:
-  static void setup(bool pullup = false) {
+        
+  static void setup(PullupMode pullup = kNoPullup) {
     if (!IOPin<pin>::isValid()) return;
     bit_clear(*IOPin<pin>::regDDR(), IOPin<pin>::bit());
-    if (pullup) bit_set(*IOPin<pin>::regPORT(), IOPin<pin>::bit());
+    if (pullup == kPullup) bit_set(*IOPin<pin>::regPORT(), IOPin<pin>::bit());
   }
-  static bool isOn() {
+  static bool get() {
     if (!IOPin<pin>::isValid()) return false;
-    return activeLOW ^ IOPin<pin>::getInput();
+    return (activeLevel == kLow) ^ IOPin<pin>::getInput();
   }
   static bool enablePCInt() {
     bit_set(PCICR, IOPin<pin>::pcIntBit());
@@ -95,6 +99,37 @@ public:
     bit_set(*IOPin<pin>::regPCMSK(), IOPin<pin>::bit());
   }
 };
+
+template<int pin, byte debounce, LogicLevel activeLevel = kHigh>
+class InputDebouncePin : public InputPin<pin, activeLevel> {
+public:
+
+    static bool get() {
+        return (_on && _counter == debounce) || (!_on && _counter > 0);
+    }
+    
+    static void update() {
+        bool on = InputPin<pin, activeLevel>::get();
+        if (on) {
+          if (_counter < debounce) _counter++;
+          _on = true;
+        }
+        else {
+          if (_counter > 0) _counter--;
+          _on = false;
+        }
+    }
+
+private:
+    static byte _counter;
+    static bool _on;
+};
+
+template<int pin, byte debounce, LogicLevel activeLevel>
+byte InputDebouncePin<pin, debounce, activeLevel>::_counter = 0;
+
+template<int pin, byte debounce, LogicLevel activeLevel>
+bool InputDebouncePin<pin, debounce, activeLevel>::_on = false;
 
 /*
 
@@ -107,7 +142,7 @@ pin.off();                  // switch off
 
  */
 
-template<int pin, bool activeLOW = false>
+template<int pin, LogicLevel activeLevel = kHigh>
 class OutputPin : public IOPin<pin> {
 public:
   static void setup(bool initialOn = false) {
@@ -116,7 +151,7 @@ public:
     set(initialOn);
   }
   static void set(bool on) {
-    IOPin<pin>::setOutput(on ^ activeLOW);
+    IOPin<pin>::setOutput(on ^ (activeLevel == kLow));
   }
   static void on() {
     set(true);
@@ -125,7 +160,7 @@ public:
     set(false);
   }
   static bool get() {
-    return IOPin<pin>::getOutput() ^ activeLOW;
+    return IOPin<pin>::getOutput() ^ (activeLevel == kLow);
   }
 };
 

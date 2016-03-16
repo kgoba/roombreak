@@ -182,7 +182,7 @@ ISR(TIMER2_OVF_vect) {
 ISR(PCINT0_vect) {
   static byte cnt;
   
-  if (pinZeroCross.isOn()) {
+  if (pinZeroCross.get()) {
     cnt++;
     if (cnt == 4) {
       cnt = 0;

@@ -2,6 +2,7 @@
 #include <Common/serial.h>
 #include <Common/modbus.h>
 #include <Common/util.h>
+#include <Common/pins.h>
 #include <Common/audioplayer.h>
 
 #include <util/delay.h>
@@ -33,19 +34,22 @@ using namespace WCConfig;
 // audio player track selection pins (on I/O expander)
 #define XPIN_MUTE       12
 
+#define N_DEBOUNCE      10
+
 //const byte pinButtons[] = { PIN_BTN };
 
 WS2803S ioExpander(PIN_SDA, PIN_CLK);
 AudioPlayer player1(ioExpander, 15, 14, 13, 17, 16);
 
-Button btn1(PIN_BTN1);
+InputDebouncePin<PIN_BTN1, N_DEBOUNCE, kLow> btn1;
 Button btn2(PIN_BTN2);
 Button btn3(PIN_BTN3);
 Button btn4(PIN_BTN4);
 Button pir(PIN_PIR);
-OutputPin fan(PIN_FAN);
-OutputPin dim1(PIN_DIM1);
-OutputPin dim2(PIN_DIM2);
+
+OutputPin<PIN_FAN> fan;
+OutputPin<PIN_DIM1> dim1;
+OutputPin<PIN_DIM2> dim2;
 
 enum {
   FLAG_DONE,
@@ -107,7 +111,7 @@ void fanRampDown(byte delta) {
 
 void setup() {
   // setup IO pins
-  btn1.setup();
+  btn1.setup(kPullup);
   btn2.setup();
   btn3.setup();
   btn4.setup();
@@ -161,7 +165,7 @@ void loop() {
     on = !on;
   }
 
-  if (pinRead(PIN_BTN1) == LOW) dim1.on();
+  if (btn1.get()) dim1.on();
   else dim1.off();
   if (pinRead(PIN_BTN2) == LOW) dim2.on();    // sienas lampa
   else dim2.off();
