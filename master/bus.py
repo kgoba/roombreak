@@ -155,7 +155,7 @@ class Bus:
             return None
         data = self.makePacket(self.ADDRESS_MAP[address], self.CMD_REBOOT)
         self.send(data)
-        #recv = self.receive(8)
+        recv = self.receive(8)
         return
         
     def send(self, data):

@@ -19,16 +19,13 @@ import logging
 
 class RS485:
   def __init__(self, device, baudrate = 19200, timeout = 1, writeTimeout = 0.2):
-    self.ser = serial.Serial(device, baudrate = baudrate, timeout = timeout, writeTimeout = writeTimeout, parity=serial.PARITY_NONE,
-                   stopbits=serial.STOPBITS_ONE,
-                                  bytesize=serial.EIGHTBITS)
-    
+    self.ser = serial.Serial(device, baudrate = baudrate, timeout = timeout, writeTimeout = writeTimeout, 
+                    parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
     return
 
   def write(self, data):
     if pinRXD != None: pinRXD.on()
-    if pinTXE != None: 
-      pinTXE.on()
+    if pinTXE != None: pinTXE.on()
     result = self.ser.write(data)
     self.ser.flush()
     if pinTXE != None: 
@@ -42,6 +39,6 @@ class RS485:
     return self.ser.read(size = size)
 
   def flush(self):
-    #self.ser.flush()
+    self.ser.flush()
     #if pinRXD != None: pinRXD.off()
     return
