@@ -3,6 +3,9 @@
 #define PIN_SDA   12
 #define PIN_CLK   13
 
+#define LED_PWM     255
+#define SEGMENT_PWM 255
+
 BombLED::BombLED() : _driver(PIN_SDA, PIN_CLK, 3)
 {
   _minutes = DEFAULT_MINUTES;
@@ -20,8 +23,8 @@ void BombLED::setup()
 void BombLED::update()
 {
   if (!_refresh) return;
-  setLeds((1UL << 10) | (1UL << 11), _blinkOn ? 255 : 0);
-  setDigits(_minutes / 10, _minutes % 10, _seconds / 10, _seconds % 10, 255);
+  setLeds((1UL << 10) | (1UL << 11), _blinkOn ? LED_PWM : 0);
+  setDigits(_minutes / 10, _minutes % 10, _seconds / 10, _seconds % 10, SEGMENT_PWM);
   _driver.update();
 }
 
@@ -123,10 +126,18 @@ const byte BombLED::_digits[11]={
   0b00000000      // OFF
 };
 
-void BombLED::setLeds(unsigned int indata, byte duty) {
+void BombLED::setLeds(word indata, byte duty) {
   for (byte i=0;i<12;i++){
     _driver.set(_ledmap[i]+18, (indata & (1 << i))?duty : 0);
   }
+}
+
+void BombLED::setLED(byte index) {
+  _driver.set(_ledmap[index] + 18, LED_PWM);
+}
+
+void BombLED::clearLED(byte index) {
+  _driver.set(_ledmap[index] + 18, 0);
 }
 
 void BombLED::setDots(byte indata, byte duty) {

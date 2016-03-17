@@ -14,6 +14,9 @@ public:
 
   void tickSecond();
   void toggleBlink();
+  
+  void setLED(byte index);
+  void clearLED(byte index);
     
   void setMinutes(byte minutes);
   byte getMinutes() const;
@@ -26,7 +29,7 @@ public:
   //byte callback(byte cmd, byte *params, byte nParams, byte *nResults);
       
 private:
-  void setLeds(unsigned int indata, byte duty);
+  void setLeds(word indata, byte duty);
   void setDots(byte indata, byte duty);
   void setSegments(byte index, byte mask, byte duty);
   void setDigit(byte index, byte value, byte duty);
