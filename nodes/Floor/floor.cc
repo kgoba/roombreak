@@ -52,10 +52,6 @@ byte gSensorDone;
 volatile byte gFlags;
 volatile word gMillis;
 
-void servoOn();
-void servoOff();
-void servoSet(word ppm_us);
-
 byte taskIsDone() {
   return gSensorDone == gSensorMask;
 }
@@ -110,7 +106,7 @@ void setup() {
 
   ioExpander.setup();
   player1.setup();
-  
+
   taskSetup(BUS_ADDRESS);
   taskRestart();
 }
@@ -134,8 +130,7 @@ void loop() {
   }
   if (triggerSound) {
     player1.play(1);
-  }
-  else {
+    _delay_ms(50);
     player1.stop();    
   }
   if (gSensorDone == gSensorMask) {

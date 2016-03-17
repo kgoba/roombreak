@@ -7,8 +7,8 @@
 //volatile static FIFO<byte, 32> rxFIFO;
 //volatile static FIFO<byte, 32> txFIFO;
 
-volatile FIFO(rxFIFO, byte, 128);
-volatile FIFO(txFIFO, byte, 128);
+volatile FIFO(rxFIFO, byte, 64);
+volatile FIFO(txFIFO, byte, 64);
 
 byte Serial::_pinTXE;
 byte Serial::_pinRXD;

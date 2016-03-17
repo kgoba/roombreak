@@ -99,7 +99,7 @@ namespace ValveConfig {
   
   const byte CMD_DIGIT   = 0x10;
 
-  const word COUNT_THRESHOLD  = 100;
+  const int16_t COUNT_THRESHOLD  = 100;
 
   const int8_t VALVE1_CW      = -5;
   const int8_t VALVE1_CCW     = +7;

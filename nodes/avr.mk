@@ -1,5 +1,9 @@
 
-CXXFLAGS = -g -mmcu=$(MCU) -Os -fdata-sections -ffunction-sections -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums -fno-inline-small-functions -DF_CPU=$(F_CPU)
+CXXFLAGS = -g -mmcu=$(MCU) -Os 
+CXXFLAGS += -DF_CPU=$(F_CPU)
+CXXFLAGS += -fdata-sections -ffunction-sections 
+CXXFLAGS += -funsigned-char -funsigned-bitfields -fshort-enums -fno-inline-small-functions 
+CXXFLAGS += -fpack-struct
 INCLUDES = -I..
 LFLAGS   += -g -mmcu=$(MCU) -Wl,--relax,--gc-sections -L../Common
 LIBS 	 = -lcommon
@@ -10,7 +14,6 @@ OBJ = $(SRC:.cc=.o)
 .PHONY: all clean fuse program
 
 all: $(TARGET).hex $(TARGET).lst
-	@echo "  Built successfully"
 
 clean:
 	@echo "  Cleaning all"
@@ -28,7 +31,7 @@ $(TARGET).elf: $(OBJ) ../Common/libcommon.a
 	@$(SIZE) $@
 
 .cc.o:
-	@echo "  Compiling @<..."
+	@echo "  Compiling $<..."
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 fuse:

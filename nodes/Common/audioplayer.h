@@ -20,8 +20,8 @@ private:
 class AudioShield {
   
 public:
-  AudioPlayer player1;
-  AudioPlayer player2;
-  AudioPlayer player3;
+  AudioPlayer *player1;
+  AudioPlayer *player2;
+  AudioPlayer *player3;
   WS2803S _expander;
 };

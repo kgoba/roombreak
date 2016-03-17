@@ -12,12 +12,11 @@ using namespace DimmerConfig;
 
 #define elif      else if
 
-
 // internal tick frequency in Hz
 #define TICK_FREQ       125UL
 
 #define PWM_FREQ        100UL
-#define PWM2_FREQ       40UL
+#define PWM2_FREQ       100UL
 
 #define PIN_ZCROSS      12
 
@@ -35,6 +34,8 @@ enum {
 volatile byte gFlags;
 volatile word gMillis;
 volatile word gCounts[3];
+volatile word avgICR;
+
 
 byte dimmer3Percent;
 byte dimmer4Percent;
@@ -109,15 +110,12 @@ void setup() {
   pinDimmer3.setup();
   pinDimmer4.setup();
   
-  pinDimmer1.on();
-  pinDimmer2.on();
+  //pinDimmer1.on();
+  //pinDimmer2.on();
   
   pinDimmer3.enable();
   pinDimmer4.enable();
-    
-  //pinWrite(PIN_DIM1, HIGH);
-  //pinWrite(PIN_DIM2, HIGH);
-  
+      
   // Setup Timer0: Fast PWM mode, TOP = OCRA
   //TIMER0_SETUP(TIMER0_PWM_PHASE_A, TIMER0_PRESCALER(2*PWM_FREQ));
   //TCCR0A |= (1 << COM0B1);
@@ -125,13 +123,18 @@ void setup() {
   //OCR0B = 0;
 
   // Setup Timer1: TOP = ICR
-  ICR1 = TIMER1_COUNTS(PWM2_FREQ);
-  OCR1A = ICR1 / 2;
-  OCR1B = ICR1 / 2;
-  TIMER1_SETUP(TIMER1_PWM_FAST_ICR, TIMER1_PRESCALER(PWM2_FREQ));
-  //TCCR1A |= (1 << COM1B1) | (1 << COM1B0);
-  //TCCR1A |= (1 << COM1A1) | (1 << COM1A0);
-  bit_set(TIMSK1, OCIE1B);
+  //ICR1 = TIMER1_COUNTS(PWM2_FREQ);
+  //OCR1A = ICR1 / 2;
+  //OCR1B = ICR1 / 2;
+  //TIMER1_SETUP(TIMER1_PWM_FAST_ICR, TIMER1_PRESCALER(PWM2_FREQ));
+  TIMER1_SETUP(TIMER1_PWM_FAST_ICR, 64UL);
+  TCCR1A |= (1 << COM1B1) | (1 << COM1B0);
+  TCCR1A |= (1 << COM1A1) | (1 << COM1A0);
+  ICR1 = 2500;
+  //OCR1A = ICR1/2;
+  //OCR1B = 0;
+  //bit_set(TIMSK1, OCIE1A);
+  //bit_set(TIMSK1, OCIE1B);
   //bit_set(TIMSK1, TOIE1);
 
   // Setup Timer2
@@ -150,6 +153,7 @@ void setup() {
 
 void loop() {
   static byte dir = 1;
+  static byte phase;
   
   // DO SOMETHING
   if (bit_check(gFlags, FLAG_TIMEOUT)) {
@@ -177,26 +181,53 @@ ISR(TIMER2_OVF_vect) {
     gMillis -= 1000;
     bit_set(gFlags, FLAG_TIMEOUT);    
   }
-}
-
-ISR(PCINT0_vect) {
-  static byte cnt;
   
-  if (pinZeroCross.get()) {
-    cnt++;
-    if (cnt == 4) {
-      cnt = 0;
-      
-      //pinDimmer2.off();
-      TCNT1 = ICR1 - 10;
-    }
+  
+  static word dir = -4;
+  
+  word min = ICR1 / 6;
+  word max = ICR1 / 6 * 5;
+  OCR1A += dir;
+  OCR1B += dir;
+  
+  if (OCR1A > max) {
+    dir = -dir;
+    OCR1A = max;
+    OCR1B = max;
+  }
+  if (OCR1A < min) {
+    dir = -dir;
+    OCR1A = min;
+    OCR1B = min;
   }
 }
 
-ISR(TIMER1_COMPB_vect) {
-  //pinDimmer2.on();
+ISR(PCINT0_vect) {  
+  avgICR = (avgICR + TCNT1) / 2;
+  //if (pinZeroCross.get()) {
+      
+  //if (TCNT1 > 20) ICR1 -= 5;
+  //if (ICR1 - TCNT1 > 20) ICR1 += 5;
+
+  if (pinZeroCross.get()) {
+    TCNT1 = ICR1 - 2;
+  }
+      //pinDimmer1.off();
+      //pinDimmer2.off();
 }
 
+/*
+ISR(TIMER1_COMPB_vect) {
+  pinDimmer2.on();
+}
+
+ISR(TIMER1_COMPA_vect) {
+  pinDimmer1.on();
+}
+*/
+
+/*
 ISR(TIMER1_OVF_vect) {
   //pinDimmer2.off();
 }
+*/

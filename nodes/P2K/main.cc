@@ -10,9 +10,12 @@
 
 using namespace P2KConfig;
 
-#define TICK_FREQ       125
+#define TICK_FREQ       250
 
 #define PIN_OPEN        5
+
+const byte SOLUTION1[5] = { 3, 2, 1, 4, 4 };
+const byte SOLUTION2[5] = { 3, 2, 2, 2, 1 };
 
 enum {
   FLAG_SECOND,
@@ -27,7 +30,8 @@ enum {
 volatile byte gFlags;
 volatile byte gState;
 
-P2K task;
+P2K panel;
+byte gTaskDone;
 
 Serial serial;
 NewBus bus;
@@ -60,12 +64,14 @@ void setup() {
   // Setup Timer0
   // Set CTC mode, TOP = OCRA, prescaler 1024
   // Overflow 125Hz (8ms)
-  TCCR0A = (1 << WGM01) | (1 << WGM00);
-  TCCR0B = (1 << CS02) | (1 << CS00) | (1 << WGM02);
+  TIMER0_SETUP(TIMER0_FAST_PWM, TIMER0_PRESCALER(TICK_FREQ));
+  //TCCR0A = (1 << WGM01) | (1 << WGM00);
+  //TCCR0B = (1 << CS02) | (1 << CS00) | (1 << WGM02);
   TIMSK0 = (1 << TOIE0); 
-  OCR0A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
+  //OCR0A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
+  OCR0A = TIMER0_COUNTS(TICK_FREQ) - 1;
 
-  task.setup();
+  panel.setup();
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
   bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
@@ -74,41 +80,61 @@ void setup() {
 void loop() {
   static byte led = 0;
   static bool phase = true;
-  
+    
   if (bit_check(gFlags, FLAG_BLINK))
   {
     bit_clear(gFlags, FLAG_BLINK);
     
-    bool open = false;
+    bool ok1 = true;
+    bool ok2 = true;
     for (byte idx = 0; idx < 5; idx++) {
-      byte state = task.getButtons(idx);
-      task.setLED(idx, (state & 0x0F) != 0);
-      task.setLED(idx + 5, (state & 0xF0) != 0);
-      //if ((state & 0x0F) == 0x01) open = true;
+      byte state = panel.getButtons(idx);
+      byte state1 = state & 0x0F;
+      byte state2 = state & 0xF0;
+      byte mask1 = 1 << (4 - SOLUTION1[idx]);
+      byte mask2 = 1 << (8 - SOLUTION2[idx]);
+      if (state1 != mask1) {
+        ok1 = false;
+      }
+      if (state2 != mask2) {
+        ok2 = false;
+      }
+      //if (!gTaskDone) {
+      //  panel.setLED(idx, (state1 == mask1));
+      //  panel.setLED(idx + 5, (state2 == mask2));
+      //}
     }
-    open = task.getButton(0, 0);
     
-    if (open && gState == STATE_INIT) {
-      pinWrite(PIN_OPEN, HIGH);
-      _delay_ms(100);
-      pinWrite(PIN_OPEN, LOW);
-      gState = STATE_OPEN;
+    if (!gTaskDone && ok1) {
+      for (byte idx = 0; idx < 5; idx++) panel.setLED(idx, true);
     }
-    if (!open && gState == STATE_OPEN) {
-      gState = STATE_INIT;
+    if (!gTaskDone && ok2) {
+      for (byte idx = 0; idx < 5; idx++) panel.setLED(idx + 5, true);
     }
-    
-    //task.setLED(led, phase);      
+    //bool open = panel.getButton(0, 0);    
+    bool open = ok1 & ok2;
+    if (open) {
+      if (!gTaskDone) {
+        gTaskDone = true;
+        led = 0; 
+        phase = true; 
+        pinWrite(PIN_OPEN, HIGH);
+        _delay_ms(100);
+        pinWrite(PIN_OPEN, LOW);        
+      }
+    }
+
+    if (gTaskDone) {
+      panel.setLED(led, phase);            
+    }
     if (++led >= 10) {
       led = 0;
       phase = !phase;
     }
   }
   
-  task.update();
-
   bus.poll();
-  _delay_ms(1);
+  _delay_ms(20);
 }
 
 ISR(TIMER0_OVF_vect) {
@@ -126,4 +152,6 @@ ISR(TIMER0_OVF_vect) {
     millis2 -= 200;
     bit_set(gFlags, FLAG_BLINK);
   }
+  
+  panel.update();
 }

@@ -1,7 +1,5 @@
 #include <Common/config.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
-#include <Common/util.h>
+#include <Common/task.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -32,36 +30,32 @@ volatile word gMillis;
 bool gTaskDone;
 byte gState;
 
+void servoOn();
+void servoOff();
+void servoSet(word ppm_us);
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+void taskRestart() {
+  gMillis = HOLD_MS;
+  servoOn();
+  servoSet(PPM_CLOSED_US);
+  gState = kINIT;
+  gTaskDone = false;
+}
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void taskComplete() {
+  gTaskDone = true;
+}
+
+byte taskIsDone() {
+  return gTaskDone;
+}
+
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {
-    default:
-    break;
   }
   return 0;
-}
-
-
-void servoOn()
-{
-  pinWrite(PIN_PWM, LOW);
-  bit_set(TCCR0A, COM0B1);
-}
-
-void servoOff()
-{
-  bit_clear(TCCR0A, COM0B1);
-  pinWrite(PIN_PWM, LOW);
-}
-
-void servoSet(word ppm_us)
-{
-  OCR0B = ppm_us / 64;
 }
 
 void setup() {
@@ -84,14 +78,8 @@ void setup() {
   TIMSK2 = (1 << TOIE2); 
   OCR2A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
 
-  gMillis = HOLD_MS;
-  servoOn();
-  servoSet(PPM_CLOSED_US);
-  gState = kINIT;
-
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  taskRestart();
+  taskSetup(BUS_ADDRESS);
 }
 
 void loop() {  
@@ -121,8 +109,7 @@ void loop() {
     } 
   }
 
-  bus.poll();
-  _delay_ms(50);
+  taskLoop();
 }
 
 ISR(TIMER2_OVF_vect) {
@@ -134,13 +121,22 @@ ISR(TIMER2_OVF_vect) {
   if (pinRead(PIN_SWITCH) == LOW) {
     bit_set(gFlags, FLAG_BUTTON);
   }
+}
 
-  /*
-  static byte count;
-  count++;
-  if (count >= 10) {
-    OCR0B++;
-    count = 0;
-  }
-  */
+
+void servoOn()
+{
+  pinWrite(PIN_PWM, LOW);
+  bit_set(TCCR0A, COM0B1);
+}
+
+void servoOff()
+{
+  bit_clear(TCCR0A, COM0B1);
+  pinWrite(PIN_PWM, LOW);
+}
+
+void servoSet(word ppm_us)
+{
+  OCR0B = ppm_us / 64;
 }

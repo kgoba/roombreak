@@ -25,7 +25,7 @@ using namespace ValveConfig;
 #define PPM_MAX_US      (PPM_NEUTRAL_US + 560)
 #define PPM_MIN_US      (PPM_NEUTRAL_US - 560)
 
-#define POSITIONS       0x0708, 0x06B0, 0x062C, 0x05B8, 0x0560, 0x04F2, 0x0490, 0x0424, 0x03AE, 0x0352, 0x02F4
+#define POSITIONS       0x0708, 0x06B0, 0x062C, 0x05B8, 0x0560, 0x04F2, 0x0490, 0x0424, 0x03B6, 0x035A, 0x02F4
 
 
 const word ppmDigitUs[] = { POSITIONS };
@@ -62,7 +62,7 @@ void taskRestart() {
 void taskComplete() {
   if (taskIsDone()) return;
   // task is complete
-  gDigit = 9;
+  gDigit = DIGIT_END;
   gTaskDone = 1;
 }
 
@@ -115,43 +115,52 @@ void loop() {
   if (bit_check(gFlags, FLAG_TIMEOUT)) {
     bit_clear(gFlags, FLAG_TIMEOUT);
   }
+  
+  static byte lastWheel = 0xFF;
 
-  if (gCounts[0] > COUNT_THRESHOLD) {
-    gDigit += VALVE1_CW;
-    gCounts[0] = 0;
-  }
-  else if (gCounts[0] < -COUNT_THRESHOLD) {
-    gDigit += VALVE1_CCW;
-    gCounts[0] = 0;    
-  }
+  if (!taskIsDone()) {
+    if (gCounts[0] > COUNT_THRESHOLD) {
+      if (lastWheel != 0) gDigit += VALVE1_CW;
+      gCounts[0] = 0;
+      lastWheel = 0;
+    }
+    else if (gCounts[0] < -COUNT_THRESHOLD) {
+      if (lastWheel != 0) gDigit += VALVE1_CCW;
+      gCounts[0] = 0;    
+      lastWheel = 0;
+    }
   
-  if (gCounts[1] > COUNT_THRESHOLD) {
-    gDigit += VALVE2_CCW;
-    gCounts[1] = 0;
-  }
-  else if (gCounts[1] < -COUNT_THRESHOLD) {
-    gDigit += VALVE2_CW;
-    gCounts[1] = 0;    
-  }  
+    if (gCounts[1] > COUNT_THRESHOLD) {
+      if (lastWheel != 1) gDigit += VALVE2_CCW;
+      gCounts[1] = 0;
+      lastWheel = 1;
+    }
+    else if (gCounts[1] < -COUNT_THRESHOLD) {
+      if (lastWheel != 1) gDigit += VALVE2_CW;
+      gCounts[1] = 0;   
+      lastWheel = 1; 
+    }  
 
-  if (gCounts[2] > COUNT_THRESHOLD) {
-    gDigit += VALVE3_CW;
-    gCounts[2] = 0;
+    if (gCounts[2] > COUNT_THRESHOLD) {
+      if (lastWheel != 2) gDigit += VALVE3_CW;
+      gCounts[2] = 0;
+      lastWheel = 2;
+    }
+    else if (gCounts[2] < -COUNT_THRESHOLD) {
+      if (lastWheel != 2) gDigit += VALVE3_CCW;
+      gCounts[2] = 0;   
+      lastWheel = 2; 
+    }    
+    if (gDigit > 10) gDigit = 0;
+    if (gDigit < 0) gDigit = 0;
+
+    servoSet(ppmDigitUs[gDigit]);
+
+    if (gDigit == DIGIT_END) {
+      taskComplete();
+    }
   }
-  else if (gCounts[2] < -COUNT_THRESHOLD) {
-    gDigit += VALVE3_CCW;
-    gCounts[2] = 0;    
-  }
-  
-  if (gDigit > 10) gDigit = 10;
-  if (gDigit < 0) gDigit = 0;
-  
-  if (gDigit == DIGIT_END) {
-    taskComplete();
-  }
-  
-  servoSet(ppmDigitUs[gDigit]);
-  
+    
   taskLoop();
 }
 

@@ -47,7 +47,7 @@ void P2K::setup()
 void P2K::update()
 {
   byte outB = 0b00111110 | (_leds[_scanRow] & 0xC0);
-  bit_clear(outB, _scanRow + 1);
+  bit_clear(outB, N_ROWS - _scanRow);
   _driver.writeB(outB);
   byte inA = _driver.readA();
   _buttons[_scanRow] = ~inA;
@@ -57,6 +57,8 @@ void P2K::update()
 
 void P2K::clear()
 {
+  for (byte i = 0; i < N_ROWS; i++)
+    _leds[i] = 0;
   _driver.writeB(0b00111110);
 }
 
