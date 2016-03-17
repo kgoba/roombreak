@@ -6,6 +6,7 @@ import rs485
 import struct
 import time
 import sys
+import os
 
 CRC_POLYNOMIAL  = 0x21
 CRC_INITIAL     = 0xFF
@@ -243,7 +244,27 @@ def main(args):
       logging.info("Rebooting...")
       bus.reboot(args.node)
 
+def readConfig():
+    home = os.path.expanduser("~")    
+    values = dict()
+    try:
+        file = open(os.path.join(home, '.roombreak'), 'r')
+    except:
+        file = None
+    if not file:
+        return values
+    
+    for line in file:
+        line = line.rstrip()
+        if not line or line[0] == '#': continue
+        (key, val) = line.split()
+        values[key] = val
+    
+    file.close()
+    return values
+
 if __name__ == "__main__":
+  config = readConfig()
   parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
   parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
@@ -256,5 +277,7 @@ if __name__ == "__main__":
   parser.add_argument('-g', '--get', help = 'Get parameter', type = int)
 
   args = parser.parse_args(sys.argv[1:])
+  if not args.DEV and 'serial' in config:
+      args.DEV = config['serial']
   
   main(args)

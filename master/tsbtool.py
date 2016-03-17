@@ -7,24 +7,10 @@ import struct
 import rs485
 import time
 import sys
+import os
 
 from bus import CRC
 from bus import Bus
-
-logging.basicConfig(level = logging.DEBUG)
-
-parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
-
-parser.add_argument('-d', help = 'Serial port device', metavar='DEV', dest = 'DEV')
-parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
-parser.add_argument('-R', '--run', help = 'Run application', action = 'store_true', default = False)
-parser.add_argument('-c', '--connect', help = 'Connect (with optional password)', nargs = '?', const = '', metavar = 'PASSWORD')
-parser.add_argument('-r', '--read', help = 'Read into file (HEX)', type = argparse.FileType('w'))
-parser.add_argument('-w', '--write', help = 'Write from file (HEX)', type = argparse.FileType('r'))
-parser.add_argument('-t', '--type', help = 'Access type', choices = ['flash', 'EEPROM'], default = 'flash')
-parser.add_argument('-p', '--password', help = 'Change password', nargs = '?', const = '', metavar = 'NEWPASSWORD')
-
-args = parser.parse_args(sys.argv[1:])
 
 class TSB:
     N_RETRIES = 5
@@ -239,6 +225,46 @@ def readHEX(stream):
             faddress += len(data)
     logging.debug('Read %d bytes from HEX file' % len(fdata))
     return fdata
+
+def readConfig():
+    home = os.path.expanduser("~")    
+    values = dict()
+    try:
+        file = open(os.path.join(home, '.roombreak'), 'r')
+    except:
+        file = None
+    if not file:
+        return values
+    
+    for line in file:
+        line = line.rstrip()
+        if not line or line[0] == '#': continue
+        (key, val) = line.split()
+        values[key] = val
+    
+    file.close()
+    return values
+
+config = readConfig()
+parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
+
+parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
+parser.add_argument('-R', '--run', help = 'Run application', action = 'store_true', default = False)
+parser.add_argument('-c', '--connect', help = 'Connect (with optional password)', nargs = '?', const = '', metavar = 'PASSWORD')
+parser.add_argument('-r', '--read', help = 'Read into file (HEX)', type = argparse.FileType('w'))
+parser.add_argument('-w', '--write', help = 'Write from file (HEX)', type = argparse.FileType('r'))
+parser.add_argument('-t', '--type', help = 'Access type', choices = ['flash', 'EEPROM'], default = 'flash')
+parser.add_argument('-P', '--password', help = 'Change password', nargs = '?', const = '', metavar = 'NEWPASSWORD')
+parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
+
+args = parser.parse_args(sys.argv[1:])
+if not args.DEV and 'serial' in config:
+  args.DEV = config['serial']
+
+if args.debug: level = logging.DEBUG
+else: level = logging.INFO
+logging.basicConfig(level = level)
 
 #ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.5, write_timeout = 0.5, rtscts = False)
 ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.5, writeTimeout = 0.5)
