@@ -1,7 +1,5 @@
 #include <Common/config.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
-#include <Common/util.h>
+#include <Common/task.h>
 #include <Common/pins.h>
 
 #include <avr/interrupt.h>
@@ -51,25 +49,21 @@ Task task;
 volatile byte gFlags;
 volatile word gMillis;
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+void taskComplete() {
+  task.complete();
+}
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void taskRestart() {
+  task.restart();
+}
+
+byte taskIsDone() {
+  return task.isFinished();
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {
-    case CMD_INIT:
-    {
-      break;      
-    }
-    
-    case CMD_DONE:
-    {
-      break;      
-    }
-    
-    default:
-    break;
   }
   return 0;
 }
@@ -91,16 +85,14 @@ void setup() {
   
   task.setup();
 
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  taskSetup(BUS_ADDRESS);
+  taskRestart();
 }
 
 void loop() {
   task.loop();
-  
-  bus.poll();
-  _delay_ms(20);
+
+  taskLoop();
 }
 
 

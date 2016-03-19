@@ -1,7 +1,5 @@
 #include <Common/config.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
-#include <Common/util.h>
+#include <Common/task.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -12,14 +10,14 @@ using namespace RFIDConfig;
 #define PIN_ENABLE  18, 16, 14, 12,  9, 7
 #define PIN_BUZZER  5
 
-// valves
-// hall - a2, a1, a0
-// servo - 9
+// 6 sensors
+#define SENSOR_MASK   0x1F
 
 // internal timing frequency in Hz
 #define TICK_FREQ       125
 
 #define BUZZ_TICKS      10
+#define BUZZ_TICKS_LONG      80
 
 // sensor pin numbers
 const byte kPinSense[] = { PIN_SENSE };
@@ -27,31 +25,56 @@ const byte kPinEnable[] = { PIN_ENABLE };
 
 enum {
   FLAG_DONE,
-  FLAG_BUZZ
+  FLAG_BUZZ,
+  FLAG_BUZZ_LONG
 };
 
 volatile byte gFlags;
 volatile word gMillis;
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+byte gSensorState;
+byte gSensorMask = SENSOR_MASK;
+byte gTaskDone;
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+byte taskIsDone() {
+  return gTaskDone;
+}
+
+void taskRestart() {
+  gSensorState = 0;
+  gTaskDone = false;
+  //bit_clear(gFlags, FLAG_DONE);
+  bit_set(gFlags, FLAG_BUZZ);
+}
+
+void taskComplete() {
+  // task is complete
+  gSensorState = gSensorMask;
+  gTaskDone = true;
+  
+  bit_set(gFlags, FLAG_BUZZ_LONG);
+}
+
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {
-    case CMD_INIT:
+    case CMD_SENSORSTATE:
     {
-      break;      
+      busParams[0] = gSensorState;
+      *nResults = 1;
+      break;
     }
-    
-    case CMD_DONE:
+
+    case CMD_SENSORMASK:
     {
-      break;      
+      if (nParams > 0) {
+        gSensorMask = busParams[0];
+      }
+      busParams[0] = gSensorMask;
+      *nResults = 1;
+      break;
     }
-    
-    default:
-    break;
   }
   return 0;
 }
@@ -88,21 +111,20 @@ void setup() {
   TIMSK2 = (1 << TOIE2); 
 
   //gState = kINIT;
-
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
   
   //buzzerOn();
   //_delay_ms(1000);
   //buzzerOff();
-  bit_set(gFlags, FLAG_BUZZ);
+
+  taskSetup(BUS_ADDRESS);
+  taskRestart();
 }
 
 
 void loop() {  
   // DO SOMETHING
 
+  /*
   bool found = false;
   for (byte iPin = 0; iPin < ARRAY_SIZE(kPinEnable); iPin++) {
     if (pinRead(kPinSense[iPin]) == HIGH) {
@@ -113,6 +135,31 @@ void loop() {
 
   bus.poll();
   _delay_ms(50);
+  */
+  
+  if (!taskIsDone()) {
+    bool triggerSound = false;
+    for (byte idx = 0; idx < ARRAY_SIZE(kPinSense); idx++) {
+      bool newState = (pinRead(kPinSense[idx]) == HIGH);
+      bool lastState = bit_check(gSensorState, idx);
+      if (newState) {
+        if (!lastState && bit_check(gSensorMask, idx)) {
+          bit_set(gFlags, FLAG_BUZZ);          
+        }
+        bit_set(gSensorState, idx);
+      }
+      else {
+        bit_clear(gSensorState, idx);
+      }
+    }
+    if (gSensorState == gSensorMask) {
+      gTaskDone = true;
+    }
+    if (taskIsDone()) {
+      taskComplete();
+    }
+  }
+  taskLoop();
 }
 
 ISR(TIMER2_OVF_vect) {
@@ -121,6 +168,11 @@ ISR(TIMER2_OVF_vect) {
     bit_set(TCCR0A, COM0B1);
     buzzCounter = BUZZ_TICKS;
     bit_clear(gFlags, FLAG_BUZZ);
+  }
+  if (bit_check(gFlags, FLAG_BUZZ_LONG)) {
+    bit_set(TCCR0A, COM0B1);
+    buzzCounter = BUZZ_TICKS_LONG;
+    bit_clear(gFlags, FLAG_BUZZ_LONG);
   }
   
   if (buzzCounter > 0) {

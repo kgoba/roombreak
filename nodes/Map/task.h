@@ -34,6 +34,10 @@ public:
   void loop();
   void tick();
   
+  void restart();
+  void complete();
+  bool isFinished();
+  
   void loadSettings();
   void saveSettings();
     
@@ -46,6 +50,11 @@ private:
   } _state;
   
   byte _iEntered;
+  char _keyBuffer[N_BUFFER];
+  byte _keyBufferSize;
+  byte _ledMap[5];
+  char _lastKey;
     
-  void processKey(char key);
+  byte processKey(char key);
+  void showRoute(byte iTicket);
 };

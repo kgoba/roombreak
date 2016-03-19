@@ -40,14 +40,13 @@ volatile word gMillis;
 volatile int16_t gCounts[3];
 
 int8_t gDigit;
-byte gTaskDone;
 
 void servoOn();
 void servoOff();
 void servoSet(word ppm_us);
 
 byte taskIsDone() {
-  return gTaskDone;
+  return (gDigit == DIGIT_END);
 }
 
 void taskRestart() {
@@ -56,14 +55,11 @@ void taskRestart() {
   gCounts[2] = 0;
 
   gDigit = DIGIT_START;
-  gTaskDone = 0;
 }
 
 void taskComplete() {
-  if (taskIsDone()) return;
   // task is complete
   gDigit = DIGIT_END;
-  gTaskDone = 1;
 }
 
 byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
@@ -154,12 +150,11 @@ void loop() {
     if (gDigit > 10) gDigit = 0;
     if (gDigit < 0) gDigit = 0;
 
-    servoSet(ppmDigitUs[gDigit]);
-
-    if (gDigit == DIGIT_END) {
+    if (taskIsDone()) {
       taskComplete();
     }
   }
+  servoSet(ppmDigitUs[gDigit]);
     
   taskLoop();
 }

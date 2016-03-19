@@ -27,7 +27,7 @@ using namespace FloorConfig;
 // 6 sensors
 #define SENSOR_MASK   0x3F
 
-WS2803S ioExpander(PIN_SDA, PIN_CLK);
+WS2803S<PIN_SDA, PIN_CLK> ioExpander;
 AudioPlayer player1(ioExpander, XPIN_TRSEL0, XPIN_TRSEL1, XPIN_TRSEL2, XPIN_TRSEL3, XPIN_TRSEL4);
 
 const byte pinSense[] = { PIN_SENSE };
@@ -63,7 +63,6 @@ void taskRestart() {
 }
 
 void taskComplete() {
-  if (taskIsDone()) return;
   // task is complete
   gSensorDone = gSensorMask;
   //bit_set(gFlags, FLAG_DONE);
@@ -85,6 +84,16 @@ byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
         gSensorMask = busParams[0];
       }
       busParams[0] = gSensorMask;
+      *nResults = 1;
+      break;
+    }
+
+    case CMD_SENSORDONE:
+    {
+      if (nParams > 0) {
+        gSensorDone = busParams[0];
+      }
+      busParams[0] = gSensorDone;
       *nResults = 1;
       break;
     }
@@ -113,30 +122,31 @@ void setup() {
 
 void loop() {  
   // DO SOMETHING
-  bool triggerSound = false;
-  for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++) {
-    bool newState = (pinRead(pinSense[idx]) == LOW);
-    bool lastState = bit_check(gSensorState, idx);
-    if (newState && !lastState && bit_check(gSensorMask, idx) && !bit_check(gSensorDone, idx)) {
-      triggerSound = true;
-      bit_set(gSensorDone, idx);
+  if (!taskIsDone()) {
+    bool triggerSound = false;
+    for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++) {
+      bool newState = (pinRead(pinSense[idx]) == LOW);
+      bool lastState = bit_check(gSensorState, idx);
+      if (newState && !lastState && bit_check(gSensorMask, idx) && !bit_check(gSensorDone, idx)) {
+        triggerSound = true;
+        bit_set(gSensorDone, idx);
+      }
+      if (newState) {
+        bit_set(gSensorState, idx);
+      }
+      else {
+        bit_clear(gSensorState, idx);
+      }
     }
-    if (newState) {
-      bit_set(gSensorState, idx);
+    if (triggerSound) {
+      player1.play(1);
+      _delay_ms(50);
+      player1.stop();    
     }
-    else {
-      bit_clear(gSensorState, idx);
+    if (taskIsDone()) {
+      taskComplete();
     }
   }
-  if (triggerSound) {
-    player1.play(1);
-    _delay_ms(50);
-    player1.stop();    
-  }
-  if (gSensorDone == gSensorMask) {
-    taskComplete();
-  }
-
   taskLoop();
 }
 

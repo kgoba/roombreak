@@ -22,7 +22,8 @@ enum {
   kINIT,
   kCLOSED,
   kOPENING,
-  kCLOSING
+  kCLOSING,
+  kDONE
 };
 
 volatile byte gFlags;
@@ -83,12 +84,13 @@ void setup() {
 }
 
 void loop() {  
-  if (!gTaskDone) {
+  //if (!gTaskDone) 
+  {
     if (gState == kINIT && bit_check(gFlags, FLAG_TIMEOUT)) {
       servoOff();
       gState = kCLOSED;
     }
-    else if (gState == kCLOSED && bit_check(gFlags, FLAG_BUTTON)) {
+    else if (gState == kCLOSED && gTaskDone) {
       servoOn();
       servoSet(PPM_OPEN_US);
       gMillis = HOLD_MS;
@@ -104,11 +106,11 @@ void loop() {
     else if (gState == kCLOSING && bit_check(gFlags, FLAG_TIMEOUT)) {
       bit_clear(gFlags, FLAG_BUTTON);
       servoOff();
-      gState = kCLOSED;
-      gTaskDone = true;
+      gState = kDONE;
+      //gTaskDone = true;
     } 
   }
-
+  
   taskLoop();
 }
 
@@ -119,7 +121,8 @@ ISR(TIMER2_OVF_vect) {
   }
   
   if (pinRead(PIN_SWITCH) == LOW) {
-    bit_set(gFlags, FLAG_BUTTON);
+    //bit_set(gFlags, FLAG_BUTTON);
+    gTaskDone = true;
   }
 }
 

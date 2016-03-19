@@ -1,7 +1,5 @@
 #include <Common/config.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
-#include <Common/util.h>
+#include <Common/task.h>
 #include <Common/pins.h>
 #include <Common/audioplayer.h>
 
@@ -38,18 +36,33 @@ using namespace WCConfig;
 
 //const byte pinButtons[] = { PIN_BTN };
 
-WS2803S ioExpander(PIN_SDA, PIN_CLK);
+WS2803S<PIN_SDA, PIN_CLK> ioExpander;
 AudioPlayer player1(ioExpander, 15, 14, 13, 17, 16);
 
-InputDebouncePin<PIN_BTN1, N_DEBOUNCE, kLow> btn1;
+/*
 Button btn2(PIN_BTN2);
 Button btn3(PIN_BTN3);
 Button btn4(PIN_BTN4);
 Button pir(PIN_PIR);
+*/
+
+/*
+InputDebouncePin<PIN_BTN1, N_DEBOUNCE, kLow, kPullup> btn1;
+InputDebouncePin<PIN_BTN2, N_DEBOUNCE, kLow, kPullup> btn2;
+InputDebouncePin<PIN_BTN3, N_DEBOUNCE, kLow, kPullup> btn3;
+InputDebouncePin<PIN_BTN4, N_DEBOUNCE, kLow, kPullup> btn4;
+*/
+
+InputPin<PIN_BTN1, kLow, kPullup> btn1;
+InputPin<PIN_BTN2, kLow, kPullup> btn2;
+InputPin<PIN_BTN3, kLow, kPullup> btn3;
+InputPin<PIN_BTN4, kLow, kPullup> btn4;
+
+InputPin<PIN_PIR> pir;
 
 OutputPin<PIN_FAN> fan;
-OutputPin<PIN_DIM1> dim1;
-OutputPin<PIN_DIM2> dim2;
+OutputPin<PIN_DIM1> dimUV;
+OutputPin<PIN_DIM2> dimLight;
 
 enum {
   FLAG_DONE,
@@ -60,31 +73,45 @@ volatile byte gFlags;
 volatile word gMillis;
 volatile word gCounts[3];
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+byte gTaskDone;
+byte gButtonState;
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
-{
-  switch (cmd) {
-    case CMD_INIT:
-    {
-      break;      
-    }
-    
-    case CMD_DONE:
-    {
-      break;      
-    }
-    
-    default:
-    break;
-  }
-  return 0;
+void fanOff();
+void fanRampUp(byte delta);
+void fanRampDown(byte delta);
+
+byte taskIsDone() {
+  return gTaskDone;
 }
 
-void fanSet(byte state) {
-  pinWrite(PIN_FAN, (PinState)state);
+void taskRestart() {
+  gTaskDone = false;
+  //bit_clear(gFlags, FLAG_DONE);
+  fanOff();
+  dimUV.off();
+}
+
+void taskComplete() {
+  // task is complete
+  dimLight.off();
+  dimUV.on();
+  player1.stop();
+  fanOff();
+  gTaskDone = true;  
+}
+
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
+{
+  switch (cmd) {
+    case CMD_BUTTONS:
+    {
+      *nResults = 1;
+      busParams[0] = gButtonState;
+      break;
+    }
+  }
+  return 0;
 }
 
 void fanOff() {
@@ -111,14 +138,19 @@ void fanRampDown(byte delta) {
 
 void setup() {
   // setup IO pins
-  btn1.setup(kPullup);
+  btn1.setup();
   btn2.setup();
   btn3.setup();
   btn4.setup();
   pir.setup();
   fan.setup();
-  dim1.setup();
-  dim2.setup();
+  dimUV.setup();
+  dimLight.setup();
+  
+  pinWrite(PIN_BTN1, HIGH);
+  pinWrite(PIN_BTN2, HIGH);
+  pinWrite(PIN_BTN3, HIGH);
+  pinWrite(PIN_BTN4, HIGH);
   
   // Setup Timer0
   // Set Fast PWM mode, TOP = OCRA, prescaler 1024 (64us)
@@ -135,56 +167,56 @@ void setup() {
   TIMER2_SETUP(TIMER2_FAST_PWM_A, TIMER2_PRESCALER(TICK_FREQ));
   OCR2A = TIMER2_COUNTS(TICK_FREQ) - 1;
   bit_set(TIMSK2, TOIE2);                 // enable timer overflow interrupt
-
-  //bit_set(PCICR, PCIE1);    // enable pin change on PORTC
-  //PCMSK1 = 0x3F;            // pins PC0-PC5
-
-  //gState = kINIT;
-  //servoOn();
-  //servoSet(PPM_NEUTRAL_US);
   
   ioExpander.setup();
   player1.setup();
 
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
-  
-  fanOff();
-  //fan.on();
+  taskSetup(BUS_ADDRESS);
+  taskRestart();
 }
 
 void loop() {
-  static bool on;
-  static byte fan_on;
-
   // DO SOMETHING
   if (bit_check(gFlags, FLAG_TIMEOUT)) {
     bit_clear(gFlags, FLAG_TIMEOUT);
-    
-    on = !on;
   }
 
-  if (btn1.get()) dim1.on();
-  else dim1.off();
-  if (pinRead(PIN_BTN2) == LOW) dim2.on();    // sienas lampa
-  else dim2.off();
-  if (pinRead(PIN_BTN3) == LOW) {
-    fanRampUp(2);
-  }
-  else {
-    fanRampDown(4);
-  }
+  /*
+  bool b1 = btn1.get();
+  bool b2 = btn2.get();
+  bool b3 = btn3.get();
+  bool b4 = btn4.get();
+  */
+  bool b1 = (pinRead(PIN_BTN1) == LOW);
+  bool b2 = (pinRead(PIN_BTN2) == LOW);
+  bool b3 = (pinRead(PIN_BTN3) == LOW);
+  bool b4 = (pinRead(PIN_BTN4) == LOW);
+  gButtonState = 0;
+  if (b1) gButtonState |= 1;
+  if (b2) gButtonState |= 2;
+  if (b3) gButtonState |= 4;
+  if (b4) gButtonState |= 8;
+
+  dimLight.set(b2 && !(b1 && b3 && b4));
+  if (b3) fanRampUp(2);
+  else fanRampDown(4);
+  
   if (pinRead(PIN_PIR) == LOW) {
     player1.play(1);
+    //_delay_ms(5);
+    //player1.stop();
   }
-  else {
-    player1.stop();
+  else player1.stop();
+
+  dimUV.set(b1 && b2 && b3 && b4);
+  
+  if (b1 && b2 && b3 && b4) {
+    if (!taskIsDone())
+      taskComplete();
   }
   //else pinWrite(PIN_FAN, LOW); //fan.off();
     
-  bus.poll();
-  _delay_ms(50);
+  taskLoop();
 }
 
 ISR(TIMER2_OVF_vect) {
@@ -199,10 +231,12 @@ ISR(TIMER2_OVF_vect) {
     //fan_on = !fan_on;
     //pinWrite(PIN_FAN, (PinState)fan_on);
   }
+  /*
   btn1.update();
   btn2.update();
   btn3.update();
   btn4.update();
+  */
 }
 
 ISR(PCINT1_vect) {

@@ -1,7 +1,5 @@
 #include <Common/config.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
-#include <Common/util.h>
+#include <Common/task.h>
 #include <Common/audioplayer.h>
 
 #include <util/delay.h>
@@ -16,7 +14,7 @@ using namespace PlayerConfig;
 // audio player track selection pins (on I/O expander)
 #define XPIN_MUTE 12
 
-WS2803S ioExpander(PIN_SDA, PIN_CLK);
+WS2803S<PIN_SDA, PIN_CLK> ioExpander;
 AudioPlayer player1(ioExpander, 15, 14, 13, 17, 16);
 AudioPlayer player2(ioExpander, 9, 10, 11, 8, 7);
 AudioPlayer player3(ioExpander, 4, 5, 6, 2, 3);
@@ -25,35 +23,61 @@ AudioPlayer player3(ioExpander, 4, 5, 6, 2, 3);
 // internal timing frequency in Hz
 #define TICK_FREQ       125
 
-
+/*
 enum {
   FLAG_DONE
 };
 
-
 volatile byte gFlags;
 volatile word gMillis;
-byte gState;
+*/
+byte gTrack1;
+byte gTrack2;
+byte gTrack3;
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+void taskRestart() {
+  gTrack1 = 0;
+  gTrack2 = 0;
+  gTrack3 = 0;
+}
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void taskComplete() {
+}
+
+byte taskIsDone() {
+  return 0;
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {
-    case CMD_INIT:
+    case CMD_TRACK1:
     {
-      break;      
-    }
-    
-    case CMD_DONE:
+      if (nParams > 0) {
+        gTrack1 = busParams[0];
+      }
+      busParams[0] = gTrack1;
+      *nResults = 1;
+      break;
+    }    
+    case CMD_TRACK2:
     {
-      break;      
-    }
-    
-    default:
-    break;
+      if (nParams > 0) {
+        gTrack2 = busParams[0];
+      }
+      busParams[0] = gTrack2;
+      *nResults = 1;
+      break;
+    }   
+    case CMD_TRACK3:
+    {
+      if (nParams > 0) {
+        gTrack3 = busParams[0];
+      }
+      busParams[0] = gTrack3;
+      *nResults = 1;
+      break;
+    }   
   }
   return 0;
 }
@@ -68,25 +92,23 @@ void setup() {
   TIMSK2 = (1 << TOIE2); 
   OCR2A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
 
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
-
   ioExpander.setup();
   player1.setup();
   player2.setup();
   player3.setup();
+  
+  taskRestart();
+  taskSetup(BUS_ADDRESS);
 }
 
 
 void loop() {  
   // DO SOMETHING
-  player1.play(1);
-  player2.play(1);
-  player3.play(1);
+  player1.play(gTrack1);
+  player2.play(gTrack2);
+  player3.play(gTrack3);
 
-  bus.poll();
-  _delay_ms(100);
+  taskLoop();
 }
 
 ISR(TIMER2_OVF_vect) {

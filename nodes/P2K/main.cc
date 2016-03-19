@@ -1,7 +1,5 @@
 #include <Common/config.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
-#include <Common/util.h>
+#include <Common/task.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -19,7 +17,9 @@ const byte SOLUTION2[5] = { 3, 2, 2, 2, 1 };
 
 enum {
   FLAG_SECOND,
-  FLAG_BLINK
+  FLAG_BLINK,
+  FLAG_OPEN,
+  FLAG_CLOSE
 };
 
 enum {
@@ -31,27 +31,40 @@ volatile byte gFlags;
 volatile byte gState;
 
 P2K panel;
-byte gTaskDone;
+bool gSolved1;
+bool gSolved2;
+bool gCashOpen;
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+byte gCount;
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void taskRestart() {
+  gSolved1 = false;
+  gSolved2 = false;
+  gCashOpen = false;
+  gCount = 0;
+  panel.clear();
+}
+
+void taskComplete() {
+  gSolved1 = true;
+  gSolved2 = true;
+  gCount++;
+  bit_set(gFlags, FLAG_OPEN);
+  gCashOpen = true;
+}
+
+byte taskIsDone() {
+  return gSolved1 && gSolved2;
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {
-    case CMD_INIT:
+    case CMD_COUNT:
     {
-      break;      
+      *nResults = 1;
+      busParams[0] = gCount;
     }
-    
-    case CMD_DONE:
-    {
-      break;      
-    }
-    
-    default:
-    break;
   }
   return 0;
 }
@@ -72,9 +85,9 @@ void setup() {
   OCR0A = TIMER0_COUNTS(TICK_FREQ) - 1;
 
   panel.setup();
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+
+  taskRestart();
+  taskSetup(BUS_ADDRESS);
 }
 
 void loop() {
@@ -85,61 +98,58 @@ void loop() {
   {
     bit_clear(gFlags, FLAG_BLINK);
     
-    bool ok1 = true;
-    bool ok2 = true;
-    for (byte idx = 0; idx < 5; idx++) {
-      byte state = panel.getButtons(idx);
-      byte state1 = state & 0x0F;
-      byte state2 = state & 0xF0;
-      byte mask1 = 1 << (4 - SOLUTION1[idx]);
-      byte mask2 = 1 << (8 - SOLUTION2[idx]);
-      if (state1 != mask1) {
-        ok1 = false;
+    if (!taskIsDone()) {
+      bool ok1 = true;
+      bool ok2 = true;
+      for (byte idx = 0; idx < 5; idx++) {
+        byte state = panel.getButtons(idx);
+        byte state1 = state & 0x0F;
+        byte state2 = state & 0xF0;
+        byte mask1 = 1 << (4 - SOLUTION1[idx]);
+        byte mask2 = 1 << (8 - SOLUTION2[idx]);
+        if (state1 != mask1) {
+          ok1 = false;
+        }
+        if (state2 != mask2) {
+          ok2 = false;
+        }
+        //if (!gTaskDone) {
+        //  panel.setLED(idx, (state1 == mask1));
+        //  panel.setLED(idx + 5, (state2 == mask2));
+        //}
       }
-      if (state2 != mask2) {
-        ok2 = false;
-      }
-      //if (!gTaskDone) {
-      //  panel.setLED(idx, (state1 == mask1));
-      //  panel.setLED(idx + 5, (state2 == mask2));
-      //}
-    }
     
-    if (!gTaskDone && ok1) {
-      for (byte idx = 0; idx < 5; idx++) panel.setLED(idx, true);
-    }
-    if (!gTaskDone && ok2) {
-      for (byte idx = 0; idx < 5; idx++) panel.setLED(idx + 5, true);
-    }
-    //bool open = panel.getButton(0, 0);    
-    bool open = ok1 & ok2;
-    if (open) {
-      if (!gTaskDone) {
-        gTaskDone = true;
+      if (!gSolved1 && ok1) {
+        gSolved1 = true;
+        for (byte idx = 0; idx < 5; idx++) panel.setLED(idx, true);
+      }
+      if (!gSolved2 && ok2) {
+        gSolved2 = true;
+        for (byte idx = 0; idx < 5; idx++) panel.setLED(idx + 5, true);
+      }
+      if (taskIsDone()) {
         led = 0; 
         phase = true; 
-        pinWrite(PIN_OPEN, HIGH);
-        _delay_ms(100);
-        pinWrite(PIN_OPEN, LOW);        
+        taskComplete();
       }
     }
-
-    if (gTaskDone) {
+    else {
       panel.setLED(led, phase);            
-    }
-    if (++led >= 10) {
-      led = 0;
-      phase = !phase;
+      if (++led >= 10) {
+        led = 0;
+        phase = !phase;
+      }
     }
   }
-  
-  bus.poll();
-  _delay_ms(20);
+
+  taskLoop();
 }
 
 ISR(TIMER0_OVF_vect) {
   static word millis = 0;
   static word millis2 = 0;
+  static word millis3 = 0;
+  static word millis4 = 0;
   
   millis += (1000UL / TICK_FREQ);
   millis2 += (1000UL / TICK_FREQ);
@@ -154,4 +164,24 @@ ISR(TIMER0_OVF_vect) {
   }
   
   panel.update();
+
+  if (bit_check(gFlags, FLAG_OPEN)) {
+    millis3 += (1000UL / TICK_FREQ);
+    
+    if (millis3 > 500) {
+      bit_clear(gFlags, FLAG_OPEN);
+      pinWrite(PIN_OPEN, HIGH);
+      millis4 = 0;
+      bit_set(gFlags, FLAG_CLOSE);
+    }
+  }
+  if (bit_check(gFlags, FLAG_CLOSE)) {
+    millis4 += (1000UL / TICK_FREQ);
+    
+    if (millis4 > 100) {
+      bit_clear(gFlags, FLAG_CLOSE);
+      pinWrite(PIN_OPEN, LOW);       
+      millis3 = 0;
+    }
+  }
 }
