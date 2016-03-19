@@ -16,7 +16,7 @@
 
 using namespace PBXConfig;
 
-WS2803S ioExpander(PIN_SDA, PIN_CLK);
+WS2803S<PIN_SDA, PIN_CLK> ioExpander;
 AudioPlayer player1(ioExpander, XPIN_TRSEL0, XPIN_TRSEL1, XPIN_TRSEL2);
 
 PLineConfig config1 = { 

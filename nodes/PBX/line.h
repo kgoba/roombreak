@@ -14,7 +14,6 @@ struct PLineConfig
   byte trackBusy;
 };
 
-
 class PLine {
 public:
   PLine(AudioPlayer &player, const PLineConfig &config) 
