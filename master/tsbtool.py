@@ -273,9 +273,10 @@ tsb = TSB(ser)
 if args.connect != None:
     bus = Bus(ser)
 
-    logging.info("Rebooting...")
-    bus.reboot(args.connect)
-    time.sleep(0.25)
+    if args.read or args.write:
+        logging.info("Rebooting...")
+        bus.reboot(args.connect)
+        time.sleep(0.25)
 
     logging.info("Connecting...")
     if not tsb.connect(args.connect):
