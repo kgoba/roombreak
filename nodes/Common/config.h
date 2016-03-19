@@ -68,10 +68,15 @@ namespace FloorConfig {
   
   const byte CMD_SENSORSTATE = 0x10;
   const byte CMD_SENSORMASK  = 0x11;
+  const byte CMD_SENSORDONE  = 0x12;
 };
 
 namespace BombConfig {
   const byte BUS_ADDRESS = ADDRESS_BOMB;
+  
+  const byte CMD_TIME        = 0x10;
+  const byte CMD_LEDS        = 0x11;
+  const byte CMD_ENABLE      = 0x12;
 };
 
 namespace MapConfig {
@@ -92,6 +97,10 @@ namespace MapConfig {
 
 namespace RFIDConfig { 
   const byte BUS_ADDRESS = ADDRESS_RFID;
+  
+  const byte CMD_SENSORSTATE = 0x10;
+  const byte CMD_SENSORMASK  = 0x11;
+  const byte CMD_SENSORDONE  = 0x12;
 };
 
 namespace ValveConfig {
@@ -116,10 +125,16 @@ namespace ValveConfig {
 
 namespace PlayerConfig { 
   const byte BUS_ADDRESS = ADDRESS_PLAYER;
+  
+  const byte CMD_TRACK1  = 0x10;
+  const byte CMD_TRACK2  = 0x11;
+  const byte CMD_TRACK3  = 0x12;
 };
 
 namespace P2KConfig {
   const byte BUS_ADDRESS = ADDRESS_P2K;
+  
+  const byte CMD_COUNT  = 0x10;
 };
 
 namespace PBXConfig {
@@ -128,6 +143,8 @@ namespace PBXConfig {
 
 namespace WCConfig {
   const byte BUS_ADDRESS = ADDRESS_WC;
+  
+  const byte CMD_BUTTONS = 0x10;
 };
 
 namespace DimmerConfig {
