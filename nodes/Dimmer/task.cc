@@ -34,15 +34,26 @@ enum {
 volatile byte gFlags;
 volatile word gMillis;
 volatile word gCounts[3];
-volatile word avgICR;
 
 
-byte dimmer3Percent;
-byte dimmer4Percent;
+byte gDimmer1Percent;
+byte gDimmer2Percent;
+byte gDimmer3Percent;
+byte gDimmer4Percent;
 
 Serial serial;
 NewBus bus;
 byte busParams[BUS_NPARAMS];
+
+void setDimmer1(byte percent) {
+  if (percent > 100) percent = 100;
+  OCR1A = 2500/100 * (100 - percent);
+}
+
+void setDimmer2(byte percent) {
+  if (percent > 100) percent = 100;
+  OCR1B = 2500/100 * (100 - percent);
+}
 
 byte busCallback(byte cmd, byte nParams, byte *nResults)
 {
@@ -60,38 +71,40 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
     case CMD_DIMMER1:
     {
       if (nParams > 0) {
-        pinDimmer1.set(nResults[0]);
+        gDimmer1Percent = nResults[0];
+        setDimmer1(gDimmer1Percent);
       }
-      nResults[0] = pinDimmer1.get() ? 0x01 : 0x00;
+      nResults[0] = gDimmer1Percent;
       break;
     }
 
     case CMD_DIMMER2:
     {
       if (nParams > 0) {
-        pinDimmer2.set(nResults[0]);
+        gDimmer2Percent = nResults[0];
+        setDimmer1(gDimmer2Percent);
       }
-      nResults[0] = pinDimmer2.get() ? 0x01 : 0x00;
+      nResults[0] = gDimmer2Percent;
       break;
     }
     
     case CMD_DIMMER3:
     {
       if (nParams > 0) {
-        dimmer3Percent = nResults[0];
-        pinDimmer3.setPWMPercent(PWM_FREQ, dimmer3Percent);
+        gDimmer3Percent = nResults[0];
+        pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
       }
-      nResults[0] = dimmer3Percent;
+      nResults[0] = gDimmer3Percent;
       break;      
     }
     
     case CMD_DIMMER4:
     {
       if (nParams > 0) {
-        dimmer4Percent = nResults[0];
-        pinDimmer4.setPWMPercent(PWM_FREQ, dimmer4Percent);
+        gDimmer4Percent = nResults[0];
+        pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer4Percent);
       }
-      nResults[0] = dimmer4Percent;
+      nResults[0] = gDimmer4Percent;
       break;      
     }
 
@@ -131,6 +144,9 @@ void setup() {
   TCCR1A |= (1 << COM1B1) | (1 << COM1B0);
   TCCR1A |= (1 << COM1A1) | (1 << COM1A0);
   ICR1 = 2500;
+  
+  setDimmer1(70);
+  setDimmer2(30);
   //OCR1A = ICR1/2;
   //OCR1B = 0;
   //bit_set(TIMSK1, OCIE1A);
@@ -160,13 +176,14 @@ void loop() {
     bit_clear(gFlags, FLAG_TIMEOUT);
   }
   
-  pinDimmer3.setPWMPercent(PWM_FREQ, dimmer3Percent);
+  pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
+  pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer3Percent);
 
-  dimmer3Percent += dir;
-  if (dimmer3Percent >= 100) {
+  gDimmer3Percent += dir;
+  if (gDimmer3Percent >= 100) {
     dir = -dir;
   }
-  elif (dimmer3Percent == 0) {
+  elif (gDimmer3Percent == 0) {
     dir = -dir;
   }
   
@@ -183,6 +200,7 @@ ISR(TIMER2_OVF_vect) {
   }
   
   
+  /*
   static word dir = -4;
   
   word min = ICR1 / 6;
@@ -200,10 +218,10 @@ ISR(TIMER2_OVF_vect) {
     OCR1A = min;
     OCR1B = min;
   }
+  */
 }
 
 ISR(PCINT0_vect) {  
-  avgICR = (avgICR + TCNT1) / 2;
   //if (pinZeroCross.get()) {
       
   //if (TCNT1 > 20) ICR1 -= 5;
@@ -212,22 +230,4 @@ ISR(PCINT0_vect) {
   if (pinZeroCross.get()) {
     TCNT1 = ICR1 - 2;
   }
-      //pinDimmer1.off();
-      //pinDimmer2.off();
 }
-
-/*
-ISR(TIMER1_COMPB_vect) {
-  pinDimmer2.on();
-}
-
-ISR(TIMER1_COMPA_vect) {
-  pinDimmer1.on();
-}
-*/
-
-/*
-ISR(TIMER1_OVF_vect) {
-  //pinDimmer2.off();
-}
-*/
