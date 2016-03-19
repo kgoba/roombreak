@@ -61,7 +61,7 @@ NewBus gBus;
 byte gBusParams[BUS_NPARAMS];
 TaskBase *gTask;
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+byte busCallback2(byte cmd, byte nParams, byte *nResults)
 {
   byte result = 0;
   switch (cmd) {
@@ -109,4 +109,24 @@ void loop() {
   _delay_ms(LOOP_DELAY_MS);
 }
 
+void taskRegister(TaskBase *task, byte address) {
+  gTask = task;
+  
+  gTask->setup();
+
+  gSerial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
+  gSerial.enable();  
+  gBus.setup(address, &busCallback2, gBusParams, BUS_NPARAMS);
+}
+
+void TaskBase::setup(byte address) {
+  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
+  serial.enable();  
+  bus.setup(address, &busCallback2, busParams, BUS_NPARAMS);
+}
+
+void TaskBase::loop() {
+  bus.poll();
+  _delay_ms(LOOP_DELAY_MS);
+}
 */

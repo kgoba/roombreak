@@ -19,6 +19,9 @@ void taskSetup(TaskBase *task, byte address);
 
 class TaskBase {
 public:
+  virtual void setup(byte address);
+  virtual void loop();
+  
   virtual void restart() = 0;
   virtual void complete() = 0;
   virtual byte isDone() = 0;

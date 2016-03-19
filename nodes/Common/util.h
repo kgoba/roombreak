@@ -14,6 +14,7 @@
 
 #define WORD_LO(x)            ((x) & 0xFF)
 #define WORD_HI(x)            (((x) >> 8) & 0xFF)
+#define WORD_LH(l, h)         ((l) | ((word)(h) << 8))
 
 enum PinState {
   LOW, HIGH

@@ -77,11 +77,11 @@ if (pin.get()) doSomething();
 typedef enum { kLow = 0, kHigh = 1 } LogicLevel;
 typedef enum { kNoPullup = 0, kPullup = 1 } PullupMode;
 
-template<int pin, LogicLevel activeLevel = kHigh>
+template<int pin, LogicLevel activeLevel = kHigh, PullupMode pullup = kNoPullup>
 class InputPin : public IOPin<pin> {
 public:
         
-  static void setup(PullupMode pullup = kNoPullup) {
+  static void setup() {
     if (!IOPin<pin>::isValid()) return;
     bit_clear(*IOPin<pin>::regDDR(), IOPin<pin>::bit());
     if (pullup == kPullup) bit_set(*IOPin<pin>::regPORT(), IOPin<pin>::bit());
@@ -100,8 +100,8 @@ public:
   }
 };
 
-template<int pin, byte debounce, LogicLevel activeLevel = kHigh>
-class InputDebouncePin : public InputPin<pin, activeLevel> {
+template<int pin, byte debounce, LogicLevel activeLevel = kHigh, PullupMode pullup = kNoPullup>
+class InputDebouncePin : public InputPin<pin, activeLevel, pullup> {
 public:
 
     static bool get() {
@@ -109,7 +109,7 @@ public:
     }
     
     static void update() {
-        bool on = InputPin<pin, activeLevel>::get();
+        bool on = InputPin<pin, activeLevel, pullup>::get();
         if (on) {
           if (_counter < debounce) _counter++;
           _on = true;
@@ -125,11 +125,11 @@ private:
     static bool _on;
 };
 
-template<int pin, byte debounce, LogicLevel activeLevel>
-byte InputDebouncePin<pin, debounce, activeLevel>::_counter = 0;
+template<int pin, byte debounce, LogicLevel activeLevel, PullupMode pullup>
+byte InputDebouncePin<pin, debounce, activeLevel, pullup>::_counter = 0;
 
-template<int pin, byte debounce, LogicLevel activeLevel>
-bool InputDebouncePin<pin, debounce, activeLevel>::_on = false;
+template<int pin, byte debounce, LogicLevel activeLevel, PullupMode pullup>
+bool InputDebouncePin<pin, debounce, activeLevel, pullup>::_on = false;
 
 /*
 
