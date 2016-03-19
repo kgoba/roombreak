@@ -134,12 +134,12 @@ class Bus:
             return False
         return True
 
-    def getParameter(self, address, command, nRetries = 3):
+    def getParameter(self, address, command, params = bytearray(), nRetries = 3):
         if not address in self.ADDRESS_MAP:
             return None
         address = self.ADDRESS_MAP[address]
         for nTry in range(nRetries):
-            packetOut = self.makePacket(address, command)
+            packetOut = self.makePacket(address, command, params)
             self.send(packetOut)
             packetIn = self.receivePacket()
             packetIn = self.parsePacket(packetIn)
@@ -240,6 +240,17 @@ def main(args):
               logging.info("Got %s" % prettyFormat(params, "hex"))
           time.sleep(0.1)
 
+  if args.set:
+      paramsIn = [int(x) for x in args.values.split(',')]
+      logging.info("Setting parameter %d" % args.set)
+      for i in range(args.repeat):
+          params = bus.getParameter(args.node, args.set, bytearray(paramsIn))
+          if params == None:
+              logging.error("No response")
+          else:
+              logging.info("Got %s" % prettyFormat(params, "hex"))
+          time.sleep(0.1)
+          
   if args.reboot:
       logging.info("Rebooting...")
       bus.reboot(args.node)
@@ -275,6 +286,8 @@ if __name__ == "__main__":
   parser.add_argument('-r', '--repeat', help = 'Repeat N times', type = int, default = 1)
   parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
   parser.add_argument('-g', '--get', help = 'Get parameter', type = int)
+  parser.add_argument('-s', '--set', help = 'Set parameter', type = int)
+  parser.add_argument('-v', '--values', help = 'Values')
 
   args = parser.parse_args(sys.argv[1:])
   if not args.DEV and 'serial' in config:
