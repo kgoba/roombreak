@@ -1,35 +1,70 @@
 #include "bombled.h"
 
-#define PIN_SDA   12
-#define PIN_CLK   13
-
 #define LED_PWM     255
 #define SEGMENT_PWM 255
 
-BombLED::BombLED() : _driver(PIN_SDA, PIN_CLK, 3)
+BombLED::BombLED()
 {
-  _minutes = DEFAULT_MINUTES;
-  _seconds = DEFAULT_SECONDS;
   _blinkOn = false;
-  _refresh = true;
 }
 
 void BombLED::setup()
 {
   _driver.setup();
+}
+
+void BombLED::reset() {
+  _minutes = DEFAULT_MINUTES;
+  _seconds = DEFAULT_SECONDS;
+  _ledState = 0;
+  _enabled = false;
+  _refresh = true;
   update();
+}
+
+void BombLED::complete() {
+  _ledState = 0x3FF;
+  _enabled = true;
+  _refresh = true;
+  update();
+}
+
+bool BombLED::isFinished()
+{
+  return (_ledState == 0x3FF) && !isFailed();
+}
+
+bool BombLED::isFailed() 
+{
+  return (_minutes == 0) && (_seconds == 0);
 }
 
 void BombLED::update()
 {
   if (!_refresh) return;
-  setLeds((1UL << 10) | (1UL << 11), _blinkOn ? LED_PWM : 0);
-  setDigits(_minutes / 10, _minutes % 10, _seconds / 10, _seconds % 10, SEGMENT_PWM);
+  
+  if (_enabled) {    
+    word leds = _ledState;
+    if (_blinkOn) leds |= ((1 << 10) | (1 << 11));  
+    _setLeds(~leds, LED_PWM);
+
+    byte duty;
+    if (isFinished() & _blinkOn) duty = 0;
+    else duty = SEGMENT_PWM;
+  
+    setDigits(_minutes / 10, _minutes % 10, _seconds / 10, _seconds % 10, duty);
+  }
+  else {
+    _driver.clear();
+  }
   _driver.update();
+  _refresh = false;
 }
 
 void BombLED::tickSecond()
 {
+  if (!_enabled) return;
+  if (isFinished()) return;
   if (_seconds > 0) {
     _seconds--;
     _refresh = true;
@@ -42,8 +77,29 @@ void BombLED::tickSecond()
 }
 
 void BombLED::toggleBlink() {
+  if (!_enabled) return;
+  if (isFinished()) return;
   _blinkOn = !_blinkOn;
   _refresh = true;
+}
+
+void BombLED::setLeds(word state) {
+  _ledState = state;
+}
+
+word BombLED::getLeds() {
+  return _ledState;
+}
+
+void BombLED::setEnabled(byte enabled)
+{
+  _enabled = enabled;
+  _refresh = true;
+}
+
+byte BombLED::getEnabled() const
+{
+  return _enabled;
 }
 
 void BombLED::setMinutes(byte minutes)
@@ -68,44 +124,6 @@ byte BombLED::getSeconds() const
   return _seconds;
 }
 
-bool BombLED::isFinished()
-{
-  return (_minutes == 0) && (_seconds == 0);
-}
-
-/*
-byte BombLED::callback(byte cmd, byte *params, byte nParams, byte *nResults) 
-{
-  switch (cmd) {
-    case 0x01: {
-      if (nParams > 0) {
-        _minutes = params[0];
-        if (_minutes > 99) _minutes = 99;
-      }
-      *nResults = 1;
-      params[0] = _minutes;
-      break;
-    }
-    case 0x02: {
-      if (nParams > 0) {
-        _seconds = params[0];
-        if (_seconds > 59) _seconds = 59;
-      }
-      *nResults = 1;
-      params[0] = _seconds;
-      break;
-    }
-    case 0x03: {
-      *nResults = 1;
-      params[0] = (_seconds == 0) && (_minutes == 0);
-      break;
-    }
-  }
-  return 0;
-}
-*/
-
-
 
 const byte BombLED::_onesmap[]={16,17,0,1,2,14,13,15};
 const byte BombLED::_tensmap[]={11,12,5,6,7,9,8,10};
@@ -126,19 +144,12 @@ const byte BombLED::_digits[11]={
   0b00000000      // OFF
 };
 
-void BombLED::setLeds(word indata, byte duty) {
+void BombLED::_setLeds(word indata, byte duty) {
   for (byte i=0;i<12;i++){
-    _driver.set(_ledmap[i]+18, (indata & (1 << i))?duty : 0);
+    _driver.set(_ledmap[i]+18, (indata & (1 << i))? duty : 0);
   }
 }
 
-void BombLED::setLED(byte index) {
-  _driver.set(_ledmap[index] + 18, LED_PWM);
-}
-
-void BombLED::clearLED(byte index) {
-  _driver.set(_ledmap[index] + 18, 0);
-}
 
 void BombLED::setDots(byte indata, byte duty) {
   _driver.set(_tensmap[7], (indata & (1 << 3))?duty : 0); //mTens
@@ -182,6 +193,3 @@ void BombLED::setDigits(byte mTens,byte mOnes,byte sTens,byte sOnes, byte duty) 
   }
 }
 
-void BombLED::clear() {
-  _driver.clear();
-}

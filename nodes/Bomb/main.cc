@@ -1,7 +1,5 @@
-#include <Common/util.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
 #include <Common/config.h>
+#include <Common/task.h>
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -21,33 +19,48 @@ volatile byte gFlags;
 
 BombLED task;
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+void taskComplete() {
+  task.complete();
+}
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void taskRestart() {
+  task.reset();
+}
+
+byte taskIsDone() {
+  return task.isFinished();
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   //return task.callback(cmd, busParams, nParams, nResults);
   switch (cmd) {
-    case 0x01: {
-      if (nParams > 0) {
+    case CMD_TIME: {
+      if (nParams > 1) {
         task.setMinutes(busParams[0]);
+        task.setSeconds(busParams[1]);
       }
-      *nResults = 1;
+      *nResults = 2;
       busParams[0] = task.getMinutes();
+      busParams[1] = task.getSeconds();
       break;
     }
-    case 0x02: {
+    case CMD_LEDS: {
+      if (nParams > 1) {
+        task.setLeds(WORD_LH(busParams[0], busParams[1]));
+      }
+      *nResults = 2;
+      word leds = task.getLeds();
+      busParams[0] = WORD_LO(leds);
+      busParams[1] = WORD_HI(leds);
+      break;
+    }
+    case CMD_ENABLE: {
       if (nParams > 0) {
-        task.setSeconds(busParams[0]);
+        task.setEnabled(busParams[0]);
       }
       *nResults = 1;
-      busParams[0] = task.getSeconds();
-      break;
-    }
-    case 0x03: {
-      *nResults = 1;
-      busParams[0] = task.isFinished();
+      busParams[0] = task.getEnabled();
       break;
     }
   }
@@ -64,24 +77,22 @@ void setup() {
   OCR0A = (byte)(F_CPU / (1024UL * TICK_FREQ)) - 1;
 
   task.setup();
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  taskSetup(BUS_ADDRESS);
+  taskRestart();
 }
 
 void loop() {
   if (bit_check(gFlags, FLAG_SECOND)) {
     bit_clear(gFlags, FLAG_SECOND);
-    task.tickSecond();
+    //task.tickSecond();
   }
   if (bit_check(gFlags, FLAG_BLINK)) {
     bit_clear(gFlags, FLAG_BLINK);
-    task.toggleBlink();
+    //task.toggleBlink();
   }
-  task.update();
+  //task.update();
 
-  bus.poll();
-  _delay_ms(50);
+  taskLoop();
 }
 
 ISR(TIMER0_OVF_vect) {
@@ -94,9 +105,12 @@ ISR(TIMER0_OVF_vect) {
   if (millis >= 1000) {
     millis -= 1000;
     bit_set(gFlags, FLAG_SECOND);
+    task.tickSecond();
   }
   if (millis2 >= 500) {
     millis2 -= 500;
     bit_set(gFlags, FLAG_BLINK);
+    task.toggleBlink();
+    task.update();
   }
 }
