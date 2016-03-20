@@ -1,70 +1,285 @@
 <!DOCTYPE html>
-<html lang="en">
- 
-<head>
-    <title>Metro Control Panel</title>
- 
- <!--
-    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="http://getbootstrap.com/examples/jumbotron-narrow/jumbotron-narrow.css" rel="stylesheet">
-  -->
-
-    <link href="static/bootstrap.min.css" rel="stylesheet">
-    <link href="static/jumbotron-narrow.css" rel="stylesheet">
-</head>
- 
-<body>
- 
+<html>
+  <head>
+    <title>Metro panelis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/css/bootstrap.min.css" rel="stylesheet">
+    <!--
+    <script src="static/js/bootstrap.min.js"></script>
+    <script src="static/js/jquery-1.12.2.min.js"></script>
+        -->
+    <script>
+$(document).ready(function(){
+    // jQuery methods go here...
+});
+    </script>
+  </head>
+  <body>
+      <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+      <!-- Include visus compiled plugins (below), or include individual files as needed -->
+      <script src="static/js/bootstrap.min.js"></script>
+    
     <div class="container">
-        <div class="header">
+        <h3>Metro panelis</h3> 
+        
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h4 class="panel-title">Spēles statuss</h4>
+            </div>
+            <div class="panel-body row">            
+                <div class="col-lg-6">
+                    <p class="lead">
+                        Laiks: 
+                        <span class="glyphicon glyphicon-hourglass"></span> 34:34
+                    </p>
+                    <p class="lead">
+                        Durvis: 
+                        <span class="glyphicon glyphicon-ok-circle" aria-hidden="true"></span>
+                        ATVĒRTAS
+                        <span class="glyphicon glyphicon-ban-circle" aria-hidden="true"></span>
+                    </p>
+                </div>
+                <div class="col-lg-6 text-right">
+                    <button type="button" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
+                        Sākt
+                    </button>
+                    <button type="button" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-Pauze" aria-hidden="true"></span>
+                        Pauze
+                    </button>
+                    <button type="button" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-fast-backward" aria-hidden="true"></span>
+                        Atsākt visus
+                    </button>
+                    <button type="button" class="btn btn-success">
+                        <span class="glyphicon glyphicon-fast-forward" aria-hidden="true"></span>
+                        Pabeigt visus
+                    </button>
+                </div>
+            </div>
             <!--
-            <nav>
-                <ul class="nav nav-pills pull-right">
-                    <li role="presentation" class="active"><a href="#">Home</a>
-                    </li>
-                    <li role="presentation"><a href="#">Sign In</a>
-                    </li>
-                    <li role="presentation"><a href="showSignUp">Sign Up</a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="panel-footer text-right">
+            </div>
             -->
-            <h3 class="text-muted">Metro Control Panel</h3>
         </div>
-
-<!--
-        <div class="jumbotron">
-            <h1>Bucket List App</h1>
-            <p class="lead"></p>
-            <p><a class="btn btn-lg btn-success" href="showSignUp" role="button">Sign up today</a>
-            </p>
-        </div>
- -->
-        <div class="row">
-            <!--<div class="col-lg-12">-->
-
-        <table class="table table-striped">
-        <tr>
-            <th>Node</th>
-            <th>Status</th>
-        </tr>
-        {% for row in rowlist %}
-        <tr>>
-            <td>{{ row[0] }}</td>
-            <td>{{ row[1] }}</td>
-        </tr>
-        {% endfor %}
-        </table>
-             
-            <!--</div>-->
-        </div>
-
-        <footer class="footer">
-            <p>&copy; Karlis Goba 2016</p>
-        </footer>
- 
     </div>
-</body>
- 
+    
+    <div class="container">
+        <div class="panel panel-default">
+            <table class="table table-hover table-condensed" style="font-size: larger">
+                <tr class="info">
+                    <th>Uzdevums</th>
+                    <th>Izpildīts</th>
+                    <th>Informācija</th>
+                    <th class="text-right">Darbības</th>
+                </tr>
+                <tr>
+                    <td>Bumba</td>
+                    <td></td>
+                    <td>
+                        <span class="glyphicon glyphicon-check"></span>
+                        <span class="glyphicon glyphicon-check"></span>
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                        <span class="glyphicon glyphicon-check"></span>                    
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                        <span class="glyphicon glyphicon-check"></span>
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                        <span class="glyphicon glyphicon-check"></span>                    
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                    </td>
+                    <td class="text-right vmiddle">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr class="success">
+                    <td>Krāni</td>
+                    <td><span class="glyphicon glyphicon-ok"></span></td>
+                    <td><span class="glyphicon glyphicon-dashboard"></span> 8</td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Tarakāni</td>
+                    <td></td>
+                    <td>
+                        <span class="glyphicon glyphicon-check"></span>
+                        <span class="glyphicon glyphicon-check"></span>
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                        <span class="glyphicon glyphicon-check"></span>                    
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                    </td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr class="danger">
+                    <td>Dzintars</td>
+                    <td><span class="glyphicon glyphicon-alert"></span></td>
+                    <td class="alert-danger">
+                        <strong>Kļūda!</strong> Nav iespējams sazināties ar uzdevumu.
+                    </td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Aurora</td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Taksofons</td>
+                    <td></td>
+                    <td><span class="glyphicon glyphicon-phone-alt"></span> 2767</td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Pogas</td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Čūska</td>
+                    <td></td>
+                    <td>AKTĪVA</td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Karte</td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Tualete</td>
+                    <td></td>
+                    <td>
+                        Slēdži: 
+                        <span class="glyphicon glyphicon-check"></span>
+                        <span class="glyphicon glyphicon-check"></span>
+                        <span class="glyphicon glyphicon-unchecked"></span>
+                        <span class="glyphicon glyphicon-check"></span>
+                    </td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    
+    </div>
+    
+    <!--
+    <div class="container">
+        <div class="panel panel-default">
+            <div class="panel-heading" id="valves">
+                <h4>Bumba</h4>
+            </div>
+            <div class="panel-body row">
+                <div class="col-lg-8">
+                    Atlikušais laiks: 
+                </div>
+                <div class="col-lg-4 text-right">
+                    <button type="button" class="btn btn-primary">
+                        <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                        Atsākt
+                    </button>
+                    <button type="button" class="btn btn-success">
+                        <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                        Pabeigt
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    -->
+  </body>
 </html>
 

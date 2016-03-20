@@ -1,16 +1,19 @@
+# import the Flask class from the flask module
 from flask import Flask, render_template
 
+# create the application object
 app = Flask(__name__)
 
+# use decorators to link the function to a url
 @app.route('/')
-def index():
-    rowlist = (("WC", "Alive"), ("AURORA", "Down"))
-    return render_template('index.html', rowlist = rowlist)
+def home():
+    return render_template('index.html')  # return a string
 
-@app.route('/cakes')
-def cakes():
-    return 'Yummy cakes!'
+@app.route('/welcome')
+def welcome():
+    return render_template('welcome.html')  # render a template
 
+# start the server with the 'run()' method
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True)
 
