@@ -28,7 +28,7 @@ def get_time():
         (minutes, seconds)= nodes['BOMB'].getTime()
         timeLeft = "%02d:%02d" % (minutes, seconds)
     except:
-        timeLeft = None
+        timeLeft = ""
     return jsonify(timeLeft = timeLeft)
 
 # return the node statuses
@@ -43,9 +43,8 @@ def get_status():
     
     response['BOMB'] = {}
     try:
-        (minutes, seconds)= nodes['BOMB'].getTime()
-        timeLeft = "%02d:%02d" % (minutes, seconds)
-        response['BOMB']['timeLeft'] = timeLeft
+        leds = nodes['BOMB'].getLeds()
+        response['BOMB']['timeLeft'] = leds
         response['BOMB']['alive'] = True
     except:
         timeLeft = None
@@ -94,4 +93,4 @@ if __name__ == '__main__':
     except:
         logging.warning("Could not initialize bus communication")
     
-    app.run(debug=False, host='0.0.0.0', port = 8082)
+    app.run(debug=False, host='0.0.0.0', port = 8088)

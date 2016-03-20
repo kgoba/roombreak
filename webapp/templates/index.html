@@ -22,7 +22,9 @@
         $(document).ready(function(){
             $refreshTime = function() {
               $.getJSON('/_time', {}, function(data) {
-                $("#timeLeft").text(data.timeLeft);
+                if (data.timeLeft) {
+                    $("#timeLeft").text(data.timeLeft);
+                }
               });
               return false;
             }
@@ -51,7 +53,7 @@
             $refreshTime()
             
             setInterval( $refreshStatus, 5000 );
-            setInterval( $refreshTime, 1000 );
+            setInterval( $refreshTime, 2000 );
         });
     </script>
             
