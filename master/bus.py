@@ -8,6 +8,8 @@ import time
 import sys
 import os
 
+from threading import Lock
+
 CRC_POLYNOMIAL  = 0x21
 CRC_INITIAL     = 0xFF
 
@@ -69,12 +71,15 @@ class Bus:
     }
     
     def __init__(self, serial, crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)):
+        self.lock = Lock()
         self.ser = serial
         self.crc = crc
         
-    def makePacket(self, address, cmd, params = bytearray(), request = True):
+    def makePacket(self, address, cmd, params = None, request = True):
         if not request: cmd = cmd | 0x80
-        data = bytearray(self.PREFIX + [address, cmd, len(params)])
+        if params: nParams = len(params)
+        else: nParams = 0
+        data = bytearray(self.PREFIX + [address, cmd, nParams])
         if params: data += params
         data.append(self.crc.compute(data))
         return data
@@ -121,8 +126,9 @@ class Bus:
             return None
         address = self.ADDRESS_MAP[address]
         packetOut = self.makePacket(address, self.CMD_ECHO)
-        self.send(packetOut)
-        packetIn = self.receive(len(packetOut), nRetries = 1)
+        with self.lock:
+            self.send(packetOut)
+            packetIn = self.receive(len(packetOut), nRetries = 1)
         packetIn = self.parsePacket(packetIn)
         if not packetIn:
             return False
@@ -134,29 +140,32 @@ class Bus:
             return False
         return True
 
-    def getParameter(self, address, command, params = bytearray(), nRetries = 3):
+    def getParameter(self, address, command, params = None, nRetries = 3):
         if not address in self.ADDRESS_MAP:
             return None
         address = self.ADDRESS_MAP[address]
-        for nTry in range(nRetries):
-            packetOut = self.makePacket(address, command, params)
-            self.send(packetOut)
-            packetIn = self.receivePacket()
-            packetIn = self.parsePacket(packetIn)
-            if not packetIn:
-                continue
-            (address2, cmd2, params2, request2) = packetIn
-            if (address2 != address) or (cmd2 != command) or request2:
-                continue
-            return params2
-        return None
+        params2 = None
+        with self.lock:
+            for nTry in range(nRetries):
+                packetOut = self.makePacket(address, command, params)
+                self.send(packetOut)
+                packetIn = self.receivePacket()
+                packetIn = self.parsePacket(packetIn)
+                if not packetIn:
+                    continue
+                (address2, cmd2, params2, request2) = packetIn
+                if (address2 != address) or (cmd2 != command) or request2:
+                    continue
+                break
+        return params2
 
     def reboot(self, address):
         if not address in self.ADDRESS_MAP:
             return None
-        data = self.makePacket(self.ADDRESS_MAP[address], self.CMD_REBOOT)
-        self.send(data)
-        recv = self.receive(8)
+        with self.lock:
+            data = self.makePacket(self.ADDRESS_MAP[address], self.CMD_REBOOT)
+            self.send(data)
+            recv = self.receive(8)
         return
         
     def send(self, data):
@@ -173,9 +182,9 @@ class Bus:
             logging.debug("Recv %s" % prettyFormat(recv))
             if not recv:
                 continue
-            if len(recv) == size:
-                return recv
             break
+        if len(recv) == size:
+            return recv
         return None
 
     def receivePacket(self, nRetries = 3):

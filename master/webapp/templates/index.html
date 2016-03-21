@@ -16,46 +16,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="static/js/bootstrap.min.js"></script>
-
-    <script type=text/javascript>
-        //$(function() {
-        $(document).ready(function(){
-            $refreshTime = function() {
-              $.getJSON('/_time', {}, function(data) {
-                if (data.timeLeft) {
-                    $("#timeLeft").text(data.timeLeft);
-                }
-              });
-              return false;
-            }
-            $refreshStatus = function() {
-              $.getJSON('/_status', {}, function(data) {
-                $("#status").text(data.status);
-                
-                if (data.doorsOpen) {
-                    $("#doorState").text("ATVĒRTAS");                    
-                    $("#doorsOpen").show();
-                    $("#doorsClosed").hide();
-                }
-                else {
-                    $("#doorState").text("AIZVĒRTAS");                                        
-                    $("#doorsOpen").hide();
-                    $("#doorsClosed").show();
-                }
-                
-                $("#valveDigit").text(data.VALVE.digit);
-              });
-              return false;
-            }
-            //$('a#refresh').bind('click', $refreshStatus);
-            
-            $refreshStatus()
-            $refreshTime()
-            
-            setInterval( $refreshStatus, 5000 );
-            setInterval( $refreshTime, 2000 );
-        });
-    </script>
+    <!-- Include page update script -->
+    <script src="static/js/update.js" type="text/javascript"></script>
             
     <div class="container">
         <h3>Metro panelis</h3> 
@@ -110,16 +72,16 @@
     
     <div class="container">
         <div class="panel panel-default">
-            <table class="table table-hover table-condensed">
+            <table class="table table-condensed">
                 <tr class="info">
                     <th>Uzdevums</th>
                     <th>Izpildīts</th>
                     <th>Informācija</th>
                     <th class="text-right">Darbības</th>
                 </tr>
-                <tr>
+                <tr id="BOMB">
                     <td>Bumba</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td>
                         <span class="glyphicon glyphicon-check"></span>
                         <span class="glyphicon glyphicon-check"></span>
@@ -133,34 +95,34 @@
                         <span class="glyphicon glyphicon-unchecked"></span>
                     </td>
                     <td class="text-right vmiddle">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr class="success">
+                <tr id="VALVE">
                     <td>Krāni</td>
-                    <td><span class="glyphicon glyphicon-ok"></span></td>
-                    <td><span class="glyphicon glyphicon-dashboard"></span> <nbsp/> <span id="valveDigit"> ? </span></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
+                    <td><span class="glyphicon glyphicon-dashboard"></span> <nbsp/> <span class="digit"></span></td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr>
+                <tr id="FLOOR">
                     <td>Tarakāni</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td>
                         <span class="glyphicon glyphicon-check"></span>
                         <span class="glyphicon glyphicon-check"></span>
@@ -170,111 +132,111 @@
                         <span class="glyphicon glyphicon-unchecked"></span>
                     </td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr class="danger">
+                <tr id="RFID">
                     <td>Dzintars</td>
-                    <td><span class="glyphicon glyphicon-alert"></span></td>
-                    <td class="alert-danger">
-                        <strong>Kļūda!</strong> Nav iespējams sazināties ar uzdevumu.
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
+                    <td>
+                        <!--<span class="alert-danger"><strong>Kļūda!</strong> Nav iespējams sazināties ar uzdevumu.</span>-->
                     </td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr>
+                <tr id="KEY">
                     <td>Aurora</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td></td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr>
+                <tr id="PBX">
                     <td>Taksofons</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td><span class="glyphicon glyphicon-phone-alt"></span> 2767</td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr>
+                <tr id="P2K">
                     <td>Pogas</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td></td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr>
+                <tr id="SNAKE">
                     <td>Čūska</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td>AKTĪVA</td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr>
+                <tr id="MAP">
                     <td>Karte</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td></td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>
                     </td>
                 </tr>
-                <tr>
+                <tr id="WC">
                     <td>Tualete</td>
-                    <td></td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td>
                         Slēdži: 
                         <span class="glyphicon glyphicon-check"></span>
@@ -283,11 +245,11 @@
                         <span class="glyphicon glyphicon-check"></span>
                     </td>
                     <td class="text-right">                    
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary btnReset">
                             <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
                             Atsākt
                         </button>
-                        <button type="button" class="btn btn-success">
+                        <button type="button" class="btn btn-success btnFinish">
                             <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
                             Pabeigt
                         </button>

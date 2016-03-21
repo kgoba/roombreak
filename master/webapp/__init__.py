@@ -2,19 +2,10 @@
 from flask import Flask, render_template
 from flask import jsonify, request
 
-import os
-import sys
-import logging
-
-#sys.path.append(sys.path[0] + '/../master')
-sys.path.append('../master')
-from rs485 import RS485
-from bus import Bus
-import node
+from threading import Thread
 
 # create the application object
 app = Flask(__name__)
-nodes = {}
 
 # use decorators to link the function to a url
 @app.route('/')
@@ -24,73 +15,62 @@ def home():
 # return time left
 @app.route('/_time')
 def get_time():
+    master = app.config['MASTER']
+    if not master:
+        app.logger.warning("Master object not found")
+        return ""
     try:
-        (minutes, seconds)= nodes['BOMB'].getTime()
+        minutes = master.minutes
+        seconds = master.seconds
         timeLeft = "%02d:%02d" % (minutes, seconds)
     except:
+        app.logger.warning("Error while getting time update")
         timeLeft = ""
-    return jsonify(timeLeft = timeLeft)
+        minutes = ''
+        seconds = ''
+        
+    return jsonify(timeLeft = timeLeft, minutes = minutes, seconds = seconds)
 
 # return the node statuses
 @app.route('/_status')
 def get_status():
     #a = request.args.get('a', 0, type=int)
     #b = request.args.get('b', 0, type=int)
-    response = {}
+    master = app.config['MASTER']
+    if not master:
+        app.logger.warning("Master object not found")
+        return ""
     
-    response['status'] = "Pauze"
-    response['doorsOpen'] = False
+    try:
+        response = master.getStatus()
+    except:
+        response = {}
+        app.logger.warning("Error while getting status update")
     
-    response['BOMB'] = {}
-    try:
-        leds = nodes['BOMB'].getLeds()
-        response['BOMB']['timeLeft'] = leds
-        response['BOMB']['alive'] = True
-    except:
-        timeLeft = None
-        response['BOMB']['alive'] = False
-
-    response['VALVE'] = {}
-    try:
-        valveDigit = str(nodes['VALVE'].getDigit())
-        response['VALVE']['digit'] = valveDigit
-        response['VALVE']['alive'] = True
-    except:
-        valveDigit = None
-        response['VALVE']['alive'] = False
-
-    #return jsonify(status="Pauze", timeLeft=timeLeft, valveDigit=valveDigit, doorsOpen=False)
     return jsonify(response)
 
-def readConfig():
-    home = os.path.expanduser("~")    
-    values = dict()
+# finish/reset node
+@app.route('/_setDone')
+def reset():
+    master = app.config['MASTER']
+    if not master:
+        app.logger.warning("Master object not found")
+        return ''
+
     try:
-        file = open(os.path.join(home, '.roombreak'), 'r')
-    except:
-        file = None
-    if not file:
-        return values
+        name = request.args.get('id', '', type=str)
+        isDone = request.args.get('done', None, type=str)
+        if isDone == 'true':
+            master.setDone(name, True)
+        elif isDone == 'false':
+            master.setDone(name, False)
+    except Exception as e:
+        app.logger.warning("Error while resetting node (%s)" % str(e))
+    return ''
     
-    for line in file:
-        line = line.rstrip()
-        if not line or line[0] == '#': continue
-        (key, val) = line.split()
-        values[key] = val
-    
-    file.close()
-    return values
+def startServer():        
+    app.run(debug=False, host='0.0.0.0', port = 8088)
 
 # start the server with the 'run()' method
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    try:
-        config = readConfig()
-        ser = RS485(config['serial'], 19200, timeout = 0.25, writeTimeout = 0.5)
-        bus = Bus(ser)
-        nodes['BOMB'] = node.Bomb(bus)
-        nodes['VALVE'] = node.Valve(bus)
-    except:
-        logging.warning("Could not initialize bus communication")
-    
-    app.run(debug=False, host='0.0.0.0', port = 8088)
+    startServer()

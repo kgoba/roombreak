@@ -7,6 +7,8 @@ try:
 except:
     RPI_OK = False
     pass
+
+import webapp
     
 from signal import pause
 
@@ -18,7 +20,7 @@ import time
 import sys
 import rs485
 from bus import Bus
-from node import Bomb, Player
+import node
 
 class RPi:
   PIN_NODE_RST = 27
@@ -63,40 +65,79 @@ class Master:
     def __init__(self, bus):
         self.bus = bus
         self.rpi = RPi()
-        self.bomb = Bomb(bus)
-        self.player = Player(bus)
+        self.bomb = node.Bomb(bus)
+        self.player = node.Player(bus)
+        self.nodeMap = {
+            'BOMB' : self.bomb, 
+            'VALVE' : node.Valve(bus),
+            'FLOOR' : node.Floor(bus),
+            'RFID'  : node.RFID(bus),
+            'KEY'   : node.Key(bus),
+            'PBX'   : node.PBX(bus),
+            'P2K'   : node.P2K(bus),
+            'MAP'   : node.Map(bus),
+            'WC'    : node.WC(bus)
+        }
         self.minutes = 60
         self.seconds = 0
-        self.busLock = threading.Lock()
 
+    def setDone(self, address, isDone):
+        if address in self.nodeMap:
+            
+            if isDone == False:
+                logging.info("Resetting %s" % address)
+            elif isDone == True:
+                logging.info("Finishing %s" % address)
+            
+            self.nodeMap[address].getDone(isDone)
+
+    def getStatus(self):
+        response = {}
+        response['status'] = "Pauze"
+        response['doorsOpen'] = False
+
+        for name in self.nodeMap:
+            values = self.nodeMap[name].getAllValues()
+            response[name] = values
+
+        return response
+        
     def getTime(self):
         return 60 - (self.minutes + self.seconds / 60.0)
 
     def timeSyncer(self):
         while True:
+            logging.info("Updating nodes")
+            for name in self.nodeMap:
+                try:
+                    self.nodeMap[name].update()
+                except Exception as e:
+                    logging.warning("Failed to update %s (%s)" % (name, str(e)))
+
             logging.info("Syncing time")
-            self.busLock.acquire()
-            t = self.bomb.getTime()
-            self.busLock.release()
-            if not t: 
-                logging.warning("Failed to get time")
-                return
-            (minutes, seconds) = t
-            logging.info("Time sync %02d:%02d (was %02d:%02d)" % (minutes, seconds, self.minutes, self.seconds))
-            self.minutes = minutes
-            self.seconds = seconds
-            time.sleep(10)
+            try:
+                t = self.bomb.getTime()
+                if t != None:
+                    (minutes, seconds) = t
+                    self.minutes = minutes
+                    self.seconds = seconds
+                    logging.info("Time sync %02d:%02d (was %02d:%02d)" % (minutes, seconds, self.minutes, self.seconds))
+            except Exception as e:
+                logging.warning("Failed to get time (%s)" % str(e))
+            
+            time.sleep(15)
         return
 
     def timeTicker(self):
         while True:
-            if self.seconds == 0:
-                logging.info("%d minutes remaining" % self.minutes)
-                if self.minutes > 0: 
-                    self.minutes -= 1
-                    self.seconds = 59
-            else:
-                self.seconds -= 1
+            if self.bomb.enabled == True:
+                if self.seconds == 0:
+                    logging.info("%d minutes remaining" % self.minutes)
+                    if self.minutes > 0: 
+                        self.minutes -= 1
+                        self.seconds = 59
+                else:
+                    self.seconds -= 1
             time.sleep(1)
         return
         
@@ -151,9 +192,7 @@ class Master:
             
             if action != lastAction:
                 logging.info("New action: %s (time %02d:%02d)" % (action, self.minutes, self.seconds))
-                self.busLock.acquire()
                 actions[action]()
-                self.busLock.release()
                 lastAction = action
 
             time.sleep(5)
@@ -174,6 +213,7 @@ class Master:
         
     def loop(self):
         self.bomb.setTime(60, 0)
+        self.bomb.setEnabled(True)
         
         t1 = threading.Thread(target=self.timeTicker)
         t2 = threading.Thread(target=self.timeSyncer)
@@ -183,15 +223,36 @@ class Master:
         t3.daemon = True
         t1.start()
         t2.start()
-        t3.start()
+        #t3.start()
         #rpi.resetNetwork()
         #time.sleep(3)
+
+        webapp.app.config['MASTER'] = self
+        webapp.app.run(debug=False, host='0.0.0.0', port=8082)
         
         while True:
             time.sleep(5)
 
+def readConfig():
+    home = os.path.expanduser("~")    
+    values = dict()
+    try:
+        file = open(os.path.join(home, '.roombreak'), 'r')
+    except:
+        file = None
+    if not file:
+        return values
+    
+    for line in file:
+        line = line.rstrip()
+        if not line or line[0] == '#': continue
+        (key, val) = line.split()
+        values[key] = val
+    
+    file.close()
+    return values
+    
 def main(args):
-#  rpi = RPi()
   if args.debug:
     level = logging.DEBUG
   else:
