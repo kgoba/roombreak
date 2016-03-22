@@ -67,6 +67,7 @@ class Master:
         self.rpi = RPi()
         self.bomb = node.Bomb(bus)
         self.player = node.Player(bus)
+        self.dimmer = node.Dimmer(bus)
         self.nodeMap = {
             'BOMB' : self.bomb, 
             'VALVE' : node.Valve(bus),
@@ -214,7 +215,9 @@ class Master:
     def loop(self):
         self.bomb.setTime(60, 0)
         self.bomb.setEnabled(True)
-        
+        self.dimmer.setDimmer1(15)
+        self.dimmer.setDimmer2(20)
+
         t1 = threading.Thread(target=self.timeTicker)
         t2 = threading.Thread(target=self.timeSyncer)
         t3 = threading.Thread(target=self.player1Thread)
@@ -223,7 +226,7 @@ class Master:
         t3.daemon = True
         t1.start()
         t2.start()
-        #t3.start()
+        t3.start()
         #rpi.resetNetwork()
         #time.sleep(3)
 

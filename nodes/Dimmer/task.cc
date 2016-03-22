@@ -71,40 +71,44 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
     case CMD_DIMMER1:
     {
       if (nParams > 0) {
-        gDimmer1Percent = nResults[0];
+        gDimmer1Percent = busParams[0];
         setDimmer1(gDimmer1Percent);
       }
-      nResults[0] = gDimmer1Percent;
+      *nResults = 1;
+      busParams[0] = gDimmer1Percent;
       break;
     }
 
     case CMD_DIMMER2:
     {
       if (nParams > 0) {
-        gDimmer2Percent = nResults[0];
-        setDimmer1(gDimmer2Percent);
+        gDimmer2Percent = busParams[0];
+        setDimmer2(gDimmer2Percent);
       }
-      nResults[0] = gDimmer2Percent;
+      *nResults = 1;
+      busParams[0] = gDimmer2Percent;
       break;
     }
     
     case CMD_DIMMER3:
     {
       if (nParams > 0) {
-        gDimmer3Percent = nResults[0];
-        pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
+        gDimmer3Percent = busParams[0];
+        //pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
       }
-      nResults[0] = gDimmer3Percent;
+      *nResults = 1;
+      busParams[0] = gDimmer3Percent;
       break;      
     }
     
     case CMD_DIMMER4:
     {
       if (nParams > 0) {
-        gDimmer4Percent = nResults[0];
-        pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer4Percent);
+        gDimmer4Percent = busParams[0];
+        //pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer4Percent);
       }
-      nResults[0] = gDimmer4Percent;
+      *nResults = 1;
+      busParams[0] = gDimmer4Percent;
       break;      
     }
 
@@ -130,10 +134,11 @@ void setup() {
   pinDimmer4.enable();
       
   // Setup Timer0: Fast PWM mode, TOP = OCRA
-  //TIMER0_SETUP(TIMER0_PWM_PHASE_A, TIMER0_PRESCALER(2*PWM_FREQ));
-  //TCCR0A |= (1 << COM0B1);
-  //OCR0A = TIMER0_COUNTS(2*PWM_FREQ) - 1;
-  //OCR0B = 0;
+  TIMER0_SETUP(TIMER0_PWM_PHASE, 8);
+  TCCR0A |= (1 << COM0B1);
+  OCR0A = 0;
+  //TIMER0_COUNTS(2*PWM_FREQ) - 1;
+  OCR0B = 0;
 
   // Setup Timer1: TOP = ICR
   //ICR1 = TIMER1_COUNTS(PWM2_FREQ);
@@ -176,9 +181,12 @@ void loop() {
     bit_clear(gFlags, FLAG_TIMEOUT);
   }
   
-  pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
-  pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer3Percent);
+  //pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
+  //pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer4Percent);
+  OCR0A = gDimmer3Percent * 255 / 100;
+  OCR0B = gDimmer4Percent * 255 / 100;
 
+  /*
   gDimmer3Percent += dir;
   if (gDimmer3Percent >= 100) {
     dir = -dir;
@@ -186,6 +194,7 @@ void loop() {
   elif (gDimmer3Percent == 0) {
     dir = -dir;
   }
+  */
   
   bus.poll();
   _delay_ms(50);
