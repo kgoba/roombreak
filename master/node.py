@@ -294,6 +294,8 @@ class WC(NodeBase):
 class Dimmer(NodeBase):
     CMD_DIMMER1 = 16
     CMD_DIMMER2 = 17
+    CMD_DIMMER3 = 18
+    CMD_DIMMER4 = 19
 
     def __init__(self, bus):
         NodeBase.__init__(self, bus, "DIMMER")
@@ -311,6 +313,20 @@ class Dimmer(NodeBase):
         if params:
             self.dimmer2 = self.decodeByte(params)
             return self.dimmer2
+        return None
+        
+    def setDimmer3(self, newValue):
+        params = self.tryCommand(self.CMD_DIMMER3, self.encodeByte(newValue))
+        if params:
+            self.dimmer3 = self.decodeByte(params)
+            return self.dimmer3
+        return None
+
+    def setDimmer4(self, newValue):
+        params = self.tryCommand(self.CMD_DIMMER4, self.encodeByte(newValue))
+        if params:
+            self.dimmer4 = self.decodeByte(params)
+            return self.dimmer4
         return None
         
 class Player(NodeBase):
