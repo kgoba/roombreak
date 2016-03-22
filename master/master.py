@@ -149,7 +149,7 @@ class Master:
     def startGame(self):
         self.bomb.setTime(60, 0)
         self.bomb.setEnabled(True)
-        self.dimmer.setDimmer1(15)
+        self.dimmer.setDimmer1(40)
         self.dimmer.setDimmer2(20)  
         
     def player1Thread(self):
