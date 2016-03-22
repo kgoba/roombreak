@@ -107,22 +107,23 @@ class Master:
         return 60 - (self.minutes + self.seconds / 60.0)
 
     def timeSyncer(self):
+        logging.info("Status/time updater thread started")
         while True:
-            logging.info("Updating nodes")
+            logging.debug("Updating nodes")
             for name in self.nodeMap:
                 try:
                     self.nodeMap[name].update()
                 except Exception as e:
                     logging.warning("Failed to update %s (%s)" % (name, str(e)))
 
-            logging.info("Syncing time")
+            logging.debug("Syncing time")
             try:
                 t = self.bomb.getTime()
                 if t != None:
                     (minutes, seconds) = t
                     self.minutes = minutes
                     self.seconds = seconds
-                    logging.info("Time sync %02d:%02d (was %02d:%02d)" % (minutes, seconds, self.minutes, self.seconds))
+                    logging.debug("Time sync %02d:%02d (was %02d:%02d)" % (minutes, seconds, self.minutes, self.seconds))
             except Exception as e:
                 logging.warning("Failed to get time (%s)" % str(e))
             
@@ -130,6 +131,7 @@ class Master:
         return
 
     def timeTicker(self):
+        logging.info("Time ticker thread started")
         while True:
             if self.bomb.enabled == True:
                 if self.seconds == 0:
@@ -143,6 +145,8 @@ class Master:
         return
         
     def player1Thread(self):
+        logging.info("Scheduler thread started")
+        
         actions = {
             'Play1'     : lambda: self.player.setTrack1(1),
             'Play2'     : lambda: self.player.setTrack1(2),
@@ -217,7 +221,14 @@ class Master:
         
     def loop(self):
         try:
+            self.player.setTrack1(0)
+            self.player.setTrack2(0)
+            self.player.setTrack3(0)
+            self.bomb.getDone(False)
             self.bomb.setTime(60, 0)
+            self.dimmer.setDimmer1(100)
+            self.dimmer.setDimmer2(100)
+            time.sleep(5)
             self.bomb.setEnabled(True)
             self.dimmer.setDimmer1(15)
             self.dimmer.setDimmer2(20)
@@ -237,6 +248,9 @@ class Master:
         #time.sleep(3)
 
         webapp.app.config['MASTER'] = self
+        webapp.app.logger.setLevel(logging.WARNING)
+        log = logging.getLogger('werkzeug')
+        if log: log.setLevel(logging.WARNING)
         webapp.app.run(debug=False, host='0.0.0.0', port=8082)
         
         while True:
@@ -276,12 +290,10 @@ def main(args):
   master.loop()
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
+  parser = argparse.ArgumentParser(description = 'Metro@roombreak master scheduler')
 
   parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
   parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
-  parser.add_argument('-n', '--node', help = 'Node identifier')
-  parser.add_argument('-R', '--reset', help = 'Reboot', action = 'store_true', default = False)
   parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
 
   args = parser.parse_args(sys.argv[1:])
