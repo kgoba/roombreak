@@ -193,7 +193,10 @@ class Master:
             
             if action != lastAction:
                 logging.info("New action: %s (time %02d:%02d)" % (action, self.minutes, self.seconds))
-                actions[action]()
+                try:
+                    actions[action]()
+                except Exception as e:
+                    logging.warning("Failed to execute action %s (%s)" % (action, str(e)))
                 lastAction = action
 
             time.sleep(5)
@@ -213,10 +216,13 @@ class Master:
         return     
         
     def loop(self):
-        self.bomb.setTime(60, 0)
-        self.bomb.setEnabled(True)
-        self.dimmer.setDimmer1(15)
-        self.dimmer.setDimmer2(20)
+        try:
+            self.bomb.setTime(60, 0)
+            self.bomb.setEnabled(True)
+            self.dimmer.setDimmer1(15)
+            self.dimmer.setDimmer2(20)
+        except Exception as e:
+            logging.warning("Failed to initialize nodes (%s)" % str(e))
 
         t1 = threading.Thread(target=self.timeTicker)
         t2 = threading.Thread(target=self.timeSyncer)
