@@ -162,7 +162,7 @@ void Task::complete() {
 }
 
 bool Task::isFinished() {
-  return _iEntered == 0x0F;
+  return _iEntered == N_TICKETS;
 }
 
 void Task::showRoute(byte iTicket) {
@@ -211,7 +211,7 @@ void Task::loop() {
       leds.update();
       _keyBufferSize = 0;
       _iEntered++;
-      if (_iEntered == 4) {
+      if (isFinished()) {
         complete();
       }
     }

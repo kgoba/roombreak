@@ -1,7 +1,5 @@
 #include <Common/config.h>
-#include <Common/serial.h>
-#include <Common/modbus.h>
-#include <Common/util.h>
+#include <Common/task.h>
 #include <Common/audioplayer.h>
 #include <Common/pins.h>
 
@@ -36,38 +34,54 @@ volatile word gMillis;
 volatile word gCounts[3];
 
 
+volatile byte gDimmer1Ramp;
+volatile byte gDimmer2Ramp;
+volatile byte gDimmer3Ramp;
+volatile byte gDimmer4Ramp;
+
 byte gDimmer1Percent;
 byte gDimmer2Percent;
 byte gDimmer3Percent;
 byte gDimmer4Percent;
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
-
 void setDimmer1(byte percent) {
   if (percent > 100) percent = 100;
-  OCR1A = 2500/100 * (100 - percent);
+  gDimmer1Percent = percent;
 }
 
 void setDimmer2(byte percent) {
   if (percent > 100) percent = 100;
-  OCR1B = 2500/100 * (100 - percent);
+  gDimmer2Percent = percent;
 }
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void setDimmer3(byte percent) {
+  if (percent > 100) percent = 100;
+  gDimmer3Percent = percent;
+}
+
+void setDimmer4(byte percent) {
+  if (percent > 100) percent = 100;
+  gDimmer4Percent = percent;
+}
+
+void taskRestart() {
+  gDimmer1Percent = 100;
+  gDimmer2Percent = 100;
+  gDimmer3Percent = 100;
+  gDimmer4Percent = 100;
+}
+
+void taskComplete() {
+  
+}
+
+byte taskIsDone() {
+  return 0;
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {
-    case CMD_INIT:
-    {
-      break;      
-    }
-    
-    case CMD_DONE:
-    {
-      break;      
-    }
-    
     case CMD_DIMMER1:
     {
       if (nParams > 0) {
@@ -111,9 +125,6 @@ byte busCallback(byte cmd, byte nParams, byte *nResults)
       busParams[0] = gDimmer4Percent;
       break;      
     }
-
-    default:
-    break;
   }
   return 0;
 }
@@ -150,14 +161,6 @@ void setup() {
   TCCR1A |= (1 << COM1A1) | (1 << COM1A0);
   ICR1 = 2500;
   
-  setDimmer1(70);
-  setDimmer2(30);
-  //OCR1A = ICR1/2;
-  //OCR1B = 0;
-  //bit_set(TIMSK1, OCIE1A);
-  //bit_set(TIMSK1, OCIE1B);
-  //bit_set(TIMSK1, TOIE1);
-
   // Setup Timer2
   TIMER2_SETUP(TIMER2_FAST_PWM_A, TIMER2_PRESCALER(TICK_FREQ));
   OCR2A = TIMER2_COUNTS(TICK_FREQ) - 1;
@@ -167,9 +170,8 @@ void setup() {
   //bit_set(PCICR, PCIE0);    // enable pin change on PORTB
   //bit_set(PCMSK0, PIN_ZCROSS - 8);
 
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  taskRestart();
+  taskSetup(BUS_ADDRESS);
 }
 
 void loop() {
@@ -183,21 +185,14 @@ void loop() {
   
   //pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
   //pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer4Percent);
-  OCR0A = gDimmer3Percent * 255 / 100;
-  OCR0B = gDimmer4Percent * 255 / 100;
 
-  /*
-  gDimmer3Percent += dir;
-  if (gDimmer3Percent >= 100) {
-    dir = -dir;
-  }
-  elif (gDimmer3Percent == 0) {
-    dir = -dir;
-  }
-  */
+  OCR1A = 2500/100 * (100 - gDimmer1Ramp);
+  OCR1B = 2500/100 * (100 - gDimmer2Ramp);
+
+  OCR0A = gDimmer3Ramp * 255 / 100;
+  OCR0B = gDimmer4Ramp * 255 / 100;
   
-  bus.poll();
-  _delay_ms(50);
+  taskLoop();
 }
 
 ISR(TIMER2_OVF_vect) {
@@ -208,7 +203,21 @@ ISR(TIMER2_OVF_vect) {
     bit_set(gFlags, FLAG_TIMEOUT);    
   }
   
-  
+  static word millis2;
+  millis2 += (1000UL / TICK_FREQ);
+  if (millis2 >= 64) {
+    millis2 -= 64;
+//  static byte phase;
+//  {
+    if (gDimmer1Ramp > gDimmer1Percent) gDimmer1Ramp--;
+    else if (gDimmer1Ramp < gDimmer1Percent) gDimmer1Ramp++;
+    if (gDimmer2Ramp > gDimmer2Percent) gDimmer2Ramp--;
+    else if (gDimmer2Ramp < gDimmer2Percent) gDimmer2Ramp++;
+    if (gDimmer3Ramp > gDimmer3Percent) gDimmer3Ramp--;
+    else if (gDimmer3Ramp < gDimmer3Percent) gDimmer3Ramp++;
+    if (gDimmer4Ramp > gDimmer4Percent) gDimmer4Ramp--;
+    else if (gDimmer4Ramp < gDimmer4Percent) gDimmer4Ramp++;    
+  }
   /*
   static word dir = -4;
   
