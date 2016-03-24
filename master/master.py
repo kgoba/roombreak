@@ -157,6 +157,16 @@ class Master:
         self.dimmer.setDimmer3(0)
         self.dimmer.setDimmer4(0)
 
+    def ledsOn(self):
+        self.dimmer.setDimmer4(10)
+        self.dimmer.setDimmer1(25)
+        self.dimmer.setDimmer2(50)
+    
+    def ledsOff(self):
+        self.dimmer.setDimmer4(0)
+        self.dimmer.setDimmer1(50)
+        self.dimmer.setDimmer2(25)
+ 
     def player1Thread(self):
         logging.info("Scheduler thread started")
         
@@ -170,8 +180,8 @@ class Master:
             'Radio'     : lambda: self.player.setTrack3(1),
             'SnakeOn'   : lambda: self.rpi.setSnake(True),
             'SnakeOff'  : lambda: self.rpi.setSnake(False),
-            'LedsOn'    : lambda: self.dimmer.setDimmer4(10),
-            'LedsOff'   : lambda: self.dimmer.setDimmer4(0),
+            'LedsOn'    : lambda: self.ledsOn(),
+            'LedsOff'   : lambda: self.ledsOff(),
             'StartGame' : lambda: self.startGame()
         }
         
