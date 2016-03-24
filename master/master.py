@@ -43,10 +43,10 @@ class RPi:
 
   def resetNetwork(self):
     if not RPI_OK: return
-    self.rstPin.on()
-    time.sleep(0.1)
-    self.rstPin.off()
-    #self.rstPin.blink(on_time = 0.1, off_time = 0.1, background = True)
+    #self.rstPin.on()
+    #time.sleep(0.1)
+    #self.rstPin.off()
+    self.rstPin.blink(n = 1, on_time = 0.1, off_time = 0.1, background = True)
     return
 
   def setSnake(self, on):
@@ -148,11 +148,25 @@ class Master:
         return
     
     def startGame(self):
-        self.bomb.setTime(60, 0)
+        self.minutes = 60
+        self.seconds = 0
+        self.bomb.setTime(self.minutes, self.seconds)
         self.bomb.setEnabled(True)
         self.dimmer.setDimmer1(40)
-        self.dimmer.setDimmer2(20)  
-        
+        self.dimmer.setDimmer2(25)  
+        self.dimmer.setDimmer3(0)
+        self.dimmer.setDimmer4(0)
+
+    def ledsOn(self):
+        self.dimmer.setDimmer4(10)
+        self.dimmer.setDimmer1(25)
+        self.dimmer.setDimmer2(50)
+    
+    def ledsOff(self):
+        self.dimmer.setDimmer4(0)
+        self.dimmer.setDimmer1(50)
+        self.dimmer.setDimmer2(25)
+ 
     def player1Thread(self):
         logging.info("Scheduler thread started")
         
@@ -166,9 +180,9 @@ class Master:
             'Radio'     : lambda: self.player.setTrack3(1),
             'SnakeOn'   : lambda: self.rpi.setSnake(True),
             'SnakeOff'  : lambda: self.rpi.setSnake(False),
-            'LedsOn'    : lambda: self.dimmer.setDimmer4(10),
-            'LedsOff'   : lambda: self.dimmer.setDimmer4(0),
-            'StartGame': lambda: self.startGame()
+            'LedsOn'    : lambda: self.ledsOn(),
+            'LedsOff'   : lambda: self.ledsOff(),
+            'StartGame' : lambda: self.startGame()
         }
         
         timeMap = dict()
@@ -178,18 +192,23 @@ class Master:
             timeMap[timeStamp].append( action )
         
         timeKeys = sorted(timeMap.keys(), reverse=False)
-        logging.debug("Time cues: %s" % str(timeKeys))
-        
+        #logging.debug("Time cues: %s" % str(timeKeys))
+
+        try:
+            self.startGame()
+        except Exception as e:
+            logging.error("Unable to start the game (%s)" % str(e))
+
         idx = 0
-        
-        lastAction = None
         while True:
+            if not self.bomb.enabled:
+                time.sleep(1)
+                continue
+
             if idx >= len(timeKeys): 
                 logging.info("Script execution complete")
                 time.sleep(60)
                 continue
-            #idx = bisect.bisect_left(keys1, timeElapsed)
-            #if idx != -1:
             timeElapsed = self.getTime()
             if timeKeys[idx] <= timeElapsed:                
                 for action in timeMap[timeKeys[idx]]:
@@ -217,15 +236,15 @@ class Master:
         return     
         
     def restartAll(self):
-        #rpi.resetNetwork()
-        #time.sleep(3)
-        self.player.setTrack1(0)
-        self.player.setTrack2(0)
-        self.player.setTrack3(0)
-        self.bomb.getDone(False)
-        self.dimmer.getDone(False)
-        self.dimmer.setDimmer1(100)
-        self.dimmer.setDimmer2(100)
+        self.rpi.resetNetwork()
+        time.sleep(3.5)
+        #self.player.setTrack1(0)
+        #self.player.setTrack2(0)
+        #self.player.setTrack3(0)
+        #self.bomb.getDone(False)
+        #self.dimmer.getDone(False)
+        #self.dimmer.setDimmer1(100)
+        #self.dimmer.setDimmer2(100)
         
     def loop(self):
         try:
@@ -254,7 +273,7 @@ class Master:
             self.restartAll()
         except Exception as e:
             logging.warning("Failed to initialize nodes (%s)" % str(e))
-            
+        
         t1 = threading.Thread(target=self.timeTicker)
         t2 = threading.Thread(target=self.timeSyncer)
         t3 = threading.Thread(target=self.player1Thread)
@@ -274,9 +293,10 @@ class Master:
         while True:
             time.sleep(5)
 
+        return
+
 def readConfig(values):
     home = os.path.expanduser("~")    
-    #values = dict()
     try:
         file = open(os.path.join(home, '.roombreak'), 'r')
     except:
@@ -313,6 +333,7 @@ def main(args):
       logging.warning("Unable to open script file (%s)" % str(e))
   master = Master(bus, script)
   master.loop()
+  return 0
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'Metro@roombreak master scheduler')
