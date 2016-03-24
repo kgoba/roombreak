@@ -221,7 +221,7 @@ def main(args):
   logging.basicConfig(level = level)
   logging.debug(args)
 
-  ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.5, writeTimeout = 0.24)
+  ser = rs485.RS485(args.port, args.baudrate, timeout = 0.5, writeTimeout = 0.24)
   crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)
   bus = Bus(ser, crc)
 
@@ -266,9 +266,8 @@ def main(args):
       logging.info("Rebooting...")
       bus.reboot(args.node)
 
-def readConfig():
+def readConfig(values):
     home = os.path.expanduser("~")    
-    values = dict()
     try:
         file = open(os.path.join(home, '.roombreak'), 'r')
     except:
@@ -286,10 +285,9 @@ def readConfig():
     return values
 
 if __name__ == "__main__":
-  config = readConfig()
   parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
-  parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+  parser.add_argument('-p', '--port', help = 'Serial port device')
   parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
   parser.add_argument('-n', '--node', help = 'Node identifier')
   parser.add_argument('-R', '--reboot', help = 'Reboot', action = 'store_true', default = False)
@@ -301,7 +299,6 @@ if __name__ == "__main__":
   parser.add_argument('-v', '--values', help = 'Values')
 
   args = parser.parse_args(sys.argv[1:])
-  if not args.DEV and 'serial' in config:
-      args.DEV = config['serial']
+  config = readConfig(vars(args))
   
   main(args)
