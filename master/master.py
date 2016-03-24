@@ -18,6 +18,7 @@ import threading
 import bisect
 import time
 import sys
+import os
 import rs485
 from bus import Bus
 import node
@@ -273,9 +274,9 @@ class Master:
         while True:
             time.sleep(5)
 
-def readConfig():
+def readConfig(values):
     home = os.path.expanduser("~")    
-    values = dict()
+    #values = dict()
     try:
         file = open(os.path.join(home, '.roombreak'), 'r')
     except:
@@ -293,6 +294,7 @@ def readConfig():
     return values
     
 def main(args):
+  readConfig(vars(args))
   if args.debug:
     level = logging.DEBUG
   else:
@@ -300,7 +302,7 @@ def main(args):
   logging.basicConfig(level = level)
   logging.debug(args)
 
-  ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
+  ser = rs485.RS485(args.port, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
   bus = Bus(ser)
 
   script = None
@@ -315,7 +317,7 @@ def main(args):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'Metro@roombreak master scheduler')
 
-  parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+  parser.add_argument('-p', '--port', help = 'Serial port device')
   parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
   parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
   parser.add_argument('-s', '--script', help = 'Script')
