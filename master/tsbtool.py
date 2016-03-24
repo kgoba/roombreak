@@ -226,9 +226,8 @@ def readHEX(stream):
     logging.debug('Read %d bytes from HEX file' % len(fdata))
     return fdata
 
-def readConfig():
+def readConfig(values):
     home = os.path.expanduser("~")    
-    values = dict()
     try:
         file = open(os.path.join(home, '.roombreak'), 'r')
     except:
@@ -245,10 +244,9 @@ def readConfig():
     file.close()
     return values
 
-config = readConfig()
 parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
-parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+parser.add_argument('-p', '--port', help = 'Serial port device')
 parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
 parser.add_argument('-R', '--run', help = 'Run application', action = 'store_true', default = False)
 parser.add_argument('-c', '--connect', help = 'Connect (with optional password)', nargs = '?', const = '', metavar = 'PASSWORD')
@@ -259,15 +257,14 @@ parser.add_argument('-P', '--password', help = 'Change password', nargs = '?', c
 parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
 
 args = parser.parse_args(sys.argv[1:])
-if not args.DEV and 'serial' in config:
-  args.DEV = config['serial']
+readConfig(vars(args))
 
 if args.debug: level = logging.DEBUG
 else: level = logging.INFO
 logging.basicConfig(level = level)
 
 #ser = serial.Serial(args.DEV, args.baudrate, timeout = 0.5, write_timeout = 0.5, rtscts = False)
-ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.5, writeTimeout = 0.5)
+ser = rs485.RS485(args.port, args.baudrate, timeout = 0.5, writeTimeout = 0.5)
 tsb = TSB(ser)
 
 if args.connect != None:
