@@ -1,0 +1,17 @@
+[Unit]
+Description=Metro master daemon
+After=network.target
+
+[Service]
+#EnvironmentFile=-/etc/default/ssh
+ExecStart=/usr/bin/env python /home/pi/roombreak/master/master.py
+#ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+RestartSec=5
+Restart=always
+User=pi
+Group=pi
+
+[Install]
+WantedBy=multi-user.target
+
