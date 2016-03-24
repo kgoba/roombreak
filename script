@@ -1,0 +1,52 @@
+    0:00     StartGame
+    0:00     Laugh
+
+    3:00     Radio
+
+    0:00     Train
+    0:30     LedsOn
+    0:30     SnakeOn
+    5:30     SnakeOff
+    5:30     LedsOff
+    6:00     Station
+
+    9:30     Train
+   10:00     LedsOn
+   10:00     SnakeOn
+   15:00     SnakeOff
+   15:00     LedsOff
+   15:30     Station
+
+   19:30     Train
+   20:00     LedsOn
+   20:00     SnakeOn
+   25:00     SnakeOff
+   25:00     LedsOff
+   25:30     Station
+
+   29:30     Train
+   30:00     LedsOn
+   30:00     SnakeOn
+   35:00     SnakeOff
+   35:00     LedsOff
+   35:30     Station
+
+   39:30     Train
+   40:00     LedsOn
+   40:00     SnakeOn
+   45:00     SnakeOff
+   45:00     LedsOff
+   45:30     Station
+
+   49:30     Train
+   50:00     LedsOn
+   50:00     SnakeOn
+   55:00     SnakeOff
+   55:00     LedsOff
+   55:30     Station
+
+   59:00     Tick
+   59:57     Darkness
+   60:00     Explode
+   60:10     EndGame
+ 

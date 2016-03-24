@@ -290,6 +290,44 @@ class WC(NodeBase):
 
     def update(self):
         self.getDone()
+
+class Dimmer(NodeBase):
+    CMD_DIMMER1 = 16
+    CMD_DIMMER2 = 17
+    CMD_DIMMER3 = 18
+    CMD_DIMMER4 = 19
+
+    def __init__(self, bus):
+        NodeBase.__init__(self, bus, "DIMMER")
+        self.dimmer1 = None
+
+    def setDimmer1(self, newValue):
+        params = self.tryCommand(self.CMD_DIMMER1, self.encodeByte(newValue))
+        if params:
+            self.dimmer1 = self.decodeByte(params)
+            return self.dimmer1
+        return None
+
+    def setDimmer2(self, newValue):
+        params = self.tryCommand(self.CMD_DIMMER2, self.encodeByte(newValue))
+        if params:
+            self.dimmer2 = self.decodeByte(params)
+            return self.dimmer2
+        return None
+        
+    def setDimmer3(self, newValue):
+        params = self.tryCommand(self.CMD_DIMMER3, self.encodeByte(newValue))
+        if params:
+            self.dimmer3 = self.decodeByte(params)
+            return self.dimmer3
+        return None
+
+    def setDimmer4(self, newValue):
+        params = self.tryCommand(self.CMD_DIMMER4, self.encodeByte(newValue))
+        if params:
+            self.dimmer4 = self.decodeByte(params)
+            return self.dimmer4
+        return None
         
 class Player(NodeBase):
     CMD_TRACK1       = 16

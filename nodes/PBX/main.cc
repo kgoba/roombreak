@@ -5,11 +5,9 @@
 #include <stdio.h>
 
 #include "config.h"
-#include <Common/modbus.h>
 #include <Common/config.h>
-#include <Common/util.h>
+#include <Common/task.h>
 #include <Common/ws2803s.h>
-#include <Common/serial.h>
 
 #include "line.h"
 #include "user.h"
@@ -36,25 +34,21 @@ PUser user1(line1);
 //VUser user3(NUMBER_FINISH);
 //Operator oper(user1, user2, user3);
 
-Serial serial;
-NewBus bus;
-byte busParams[BUS_NPARAMS];
+void taskComplete() {
+  //
+}
 
-byte busCallback(byte cmd, byte nParams, byte *nResults)
+void taskRestart() {
+  //
+}
+
+byte taskIsDone() {
+  return true;
+}
+
+byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {
-    case CMD_INIT:
-    {
-      break;      
-    }
-    
-    case CMD_DONE:
-    {
-      break;      
-    }
-    
-    default:
-    break;
   }
   return 0;
 }
@@ -73,9 +67,8 @@ void setup()
   bit_set(ADCSRA, ADEN);
   adcReference();
   
-  serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
-  serial.enable();  
-  bus.setup(BUS_ADDRESS, &busCallback, busParams, BUS_NPARAMS);
+  taskSetup(BUS_ADDRESS);
+  taskRestart();
 }
 
 void loop()
@@ -106,7 +99,7 @@ void loop()
     pinWrite(PIN_TALK, LOW);
   }
   
-  bus.poll();
+  taskLoop();
 }
 
 extern "C" void __cxa_pure_virtual() { while (1); }
