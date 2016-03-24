@@ -5,10 +5,15 @@ PIN_TXE = 22
 PIN_RX = 15
 
 try:
-  from gpiozero import DigitalOutputDevice
-  pinRXD = DigitalOutputDevice(PIN_RXD)
-  pinTXE = DigitalOutputDevice(PIN_TXE)
-  #pinRX = DigitalInputDevice(PIN_RX, pull_up=True)
+  #from gpiozero import DigitalOutputDevice
+  #pinRXD = 
+  #x = DigitalOutputDevice(PIN_RXD)
+  #pinTXE = 
+  #y = DigitalOutputDevice(PIN_TXE)
+  #pinRX = 
+  #z = DigitalInputDevice(PIN_RX, pull_up=True)
+  pinRXD = None
+  pinTXE = None
 except:
   pinRXD = None
   pinTXE = None
@@ -27,7 +32,7 @@ class RS485:
     if pinRXD != None: pinRXD.on()
     if pinTXE != None: pinTXE.on()
     result = self.ser.write(data)
-    self.ser.flush()
+    self.ser.flushOutput()
     if pinTXE != None: 
       pinTXE.off()
       pinRXD.off()
@@ -39,6 +44,6 @@ class RS485:
     return self.ser.read(size = size)
 
   def flush(self):
-    self.ser.flush()
+    #self.ser.flushOutput()
     #if pinRXD != None: pinRXD.off()
     return
