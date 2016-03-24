@@ -1,5 +1,7 @@
 //#include <wiringSerial.h>
-#include <wiringPi.h>
+//#include <wiringPi.h>
+
+#include "gpio.h"
 
 #include <stdio.h>   /* Standard input/output definitions */
 #include <string.h>  /* String function definitions */
@@ -11,8 +13,8 @@
 
 const char *kDevice = "/dev/ttyAMA0";
 const int kBaudrate = 19200;
-const int kPinTXE = 0;
-const int kPinRXD = 3;
+const int kPinTXE = 22;
+const int kPinRXD = 17;
 
 class Serial {
 public:
@@ -35,12 +37,17 @@ Serial::Serial(int pinTXE, int pinRXD)
   _fd = -1;
   _pinTXE = pinTXE;
   _pinRXD = pinRXD;
-  pinMode(pinTXE, OUTPUT);
-  pinMode(pinRXD, OUTPUT);
+  GPIOExport(pinTXE);
+  GPIOExport(pinRXD);
+  usleep(10 * 1000);
+  GPIODirection(pinTXE, OUT);
+  GPIODirection(pinRXD, OUT);
 }
 
 Serial::~Serial()
 {
+  GPIOUnexport(_pinRXD);
+  GPIOUnexport(_pinTXE);
   close();
 }
 
@@ -72,6 +79,7 @@ bool Serial::open(const char *device, int baudrate)
   options.c_cflag &= ~CSIZE; /* Mask the character size bits */
   options.c_cflag |= CS8;    /* Select 8 data bits */
 
+  ::tcflush(_fd, TCIFLUSH);
   ::tcsetattr(_fd, TCSAFLUSH, &options);
   return true;
 }
@@ -79,8 +87,9 @@ bool Serial::open(const char *device, int baudrate)
 void Serial::write(const char *data, int count)
 {
   // enable RS485 transmitter
-  digitalWrite(_pinRXD, HIGH);
-  digitalWrite(_pinTXE, HIGH);
+  GPIOWrite(_pinRXD, HIGH);
+  GPIOWrite(_pinTXE, HIGH);
+  //usleep(1 * 1000);
   ::write(_fd, data, count);
 }
 
@@ -95,8 +104,8 @@ int Serial::read(char *data, int count)
 
   // Set timeout to 5 ms
   struct timeval timeout;
-  timeout.tv_sec = 0;
-  timeout.tv_usec = 5000;
+  timeout.tv_sec = 1;
+  timeout.tv_usec = 100000;
 
   // Wait for input to become ready or until the time out; the first parameter is
   // 1 more than the largest file descriptor in any of the sets
@@ -107,7 +116,9 @@ int Serial::read(char *data, int count)
   }
   else
   {
+    printf("Timeout\n");
     // timeout or error
+    return ::read(_fd, data, count);
     return 0;
   }
 }
@@ -116,30 +127,30 @@ void Serial::flush()
 {
   // disable RS485 transmitter
   ::tcflush(_fd, TCOFLUSH);
-  digitalWrite(_pinTXE, LOW);
-  digitalWrite(_pinRXD, LOW);
+  usleep(10 * 1000);
+  GPIOWrite(_pinTXE, LOW);
+  GPIOWrite(_pinRXD, LOW);
 }
 
 int main()
 {
-  wiringPiSetup();
-
   Serial serial(kPinTXE, kPinRXD);
   bool status = serial.open(kDevice, kBaudrate);
   if (!status) return 1;
 
   char msg1[] = { 0xAF, 0x6A, 0xDE, 0x17, 0x7F, 0x00, 0xCE };
-  char msg2[] = { 0xAF, 0x6A, 0xDE, 0x17, 0x00, 0x00, 0xD4 };
-  for (int i = 0; i < 1; i++) {
+  //char msg2[] = { 0xAF, 0x6A, 0xDE, 0x1B, 0x00, 0x00, 0xF2 };
+  char msg2[] = { 0xAF, 0x6A, 0xDE, 0x11, 0x00, 0x00, 0xC7 };
+   for (int i = 0; i < 5000; i++) {
     serial.write(msg2, 7);
-    usleep(10 * 1000);
+    //usleep(10 * 1000);
     serial.flush();
-    usleep(500 * 1000);
+    usleep(1 * 1000);
 
     int recv;
     char buf[32];
     do {
-      recv = serial.read(buf, 32);
+      recv = serial.read(buf, 7);
       if (recv > 0) {
         printf("Received %d chars: ", recv);
         for (int j = 0; j < recv; j++) {

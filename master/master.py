@@ -62,7 +62,7 @@ class RPi:
 
 
 class Master:
-    def __init__(self, bus):
+    def __init__(self, bus, script = None):
         self.bus = bus
         self.rpi = RPi()
         self.bomb = node.Bomb(bus)
@@ -81,6 +81,8 @@ class Master:
         }
         self.minutes = 60
         self.seconds = 0
+        self.script = script
+        self.timeTable = []
 
     def setDone(self, address, isDone):
         if address in self.nodeMap:
@@ -107,22 +109,23 @@ class Master:
         return 60 - (self.minutes + self.seconds / 60.0)
 
     def timeSyncer(self):
+        logging.info("Status/time updater thread started")
         while True:
-            logging.info("Updating nodes")
+            logging.debug("Updating nodes")
             for name in self.nodeMap:
                 try:
                     self.nodeMap[name].update()
                 except Exception as e:
                     logging.warning("Failed to update %s (%s)" % (name, str(e)))
 
-            logging.info("Syncing time")
+            logging.debug("Syncing time")
             try:
                 t = self.bomb.getTime()
                 if t != None:
                     (minutes, seconds) = t
                     self.minutes = minutes
                     self.seconds = seconds
-                    logging.info("Time sync %02d:%02d (was %02d:%02d)" % (minutes, seconds, self.minutes, self.seconds))
+                    logging.debug("Time sync %02d:%02d (was %02d:%02d)" % (minutes, seconds, self.minutes, self.seconds))
             except Exception as e:
                 logging.warning("Failed to get time (%s)" % str(e))
             
@@ -130,6 +133,7 @@ class Master:
         return
 
     def timeTicker(self):
+        logging.info("Time ticker thread started")
         while True:
             if self.bomb.enabled == True:
                 if self.seconds == 0:
@@ -141,64 +145,60 @@ class Master:
                     self.seconds -= 1
             time.sleep(1)
         return
+    
+    def startGame(self):
+        self.bomb.setTime(60, 0)
+        self.bomb.setEnabled(True)
+        self.dimmer.setDimmer1(40)
+        self.dimmer.setDimmer2(20)  
         
     def player1Thread(self):
+        logging.info("Scheduler thread started")
+        
         actions = {
-            'Play1'     : lambda: self.player.setTrack1(1),
-            'Play2'     : lambda: self.player.setTrack1(2),
-            'Play3'     : lambda: self.player.setTrack1(3),
-            'Play5'     : lambda: self.player.setTrack1(5),
+            'Station'   : lambda: self.player.setTrack1(1),
+            'Train'     : lambda: self.player.setTrack1(2),
+            'Tick'      : lambda: self.player.setTrack1(3),
+            'Explode'   : lambda: self.player.setTrack1(5),
+            'Laugh'     : lambda: self.player.setTrack2(2),
+            'Announce'  : lambda: self.player.setTrack2(1),
+            'Radio'     : lambda: self.player.setTrack3(1),
             'SnakeOn'   : lambda: self.rpi.setSnake(True),
-            'SnakeOff'  : lambda: self.rpi.setSnake(False)
+            'SnakeOff'  : lambda: self.rpi.setSnake(False),
+            'LedsOn'    : lambda: self.dimmer.setDimmer4(10),
+            'LedsOff'   : lambda: self.dimmer.setDimmer4(0),
+            'StartGame': lambda: self.startGame()
         }
         
-        timeTable1 = {
-             0.5: 'Play2',
-             5.5: 'SnakeOn',
-             6.1: 'SnakeOff',
-             9.5: 'Play1',
-            10.0: 'Play2',
-            15.0: 'SnakeOn',
-            15.5: 'SnakeOff',
-            19.5: 'Play1',
-            20.0: 'Play2',
-            25.0: 'SnakeOn',
-            25.5: 'SnakeOff',
-            29.5: 'Play1',
-            30.0: 'Play2',
-            35.0: 'SnakeOn',
-            35.5: 'SnakeOff',
-            39.5: 'Play1',
-            40.0: 'Play2',
-            45.0: 'SnakeOn',
-            45.5: 'SnakeOff',
-            49.5: 'Play1',
-            50.0: 'Play2',
-            55.0: 'SnakeOn',
-            55.5: 'SnakeOff',
-            59.0: 'Play1',
-            60.0: 'Play5',
-            60.5: 'Play3'
-        }
+        timeMap = dict()
+        for (timeStamp, action) in self.timeTable:
+            if not timeStamp in timeMap:
+                timeMap[timeStamp] = list()
+            timeMap[timeStamp].append( action )
         
-        keys1 = sorted(timeTable1.keys(), reverse=False)
+        timeKeys = sorted(timeMap.keys(), reverse=False)
+        logging.debug("Time cues: %s" % str(timeKeys))
+        
+        idx = 0
         
         lastAction = None
         while True:
-            action = None
+            if idx >= len(timeKeys): 
+                logging.info("Script execution complete")
+                time.sleep(60)
+                continue
+            #idx = bisect.bisect_left(keys1, timeElapsed)
+            #if idx != -1:
             timeElapsed = self.getTime()
-            idx = bisect.bisect_left(keys1, timeElapsed)
-            if idx != -1:
-                action = timeTable1[keys1[idx]]
-            
-            if action != lastAction:
-                logging.info("New action: %s (time %02d:%02d)" % (action, self.minutes, self.seconds))
-                try:
-                    actions[action]()
-                except Exception as e:
-                    logging.warning("Failed to execute action %s (%s)" % (action, str(e)))
-                lastAction = action
+            if timeKeys[idx] <= timeElapsed:                
+                for action in timeMap[timeKeys[idx]]:
+                    logging.info("New action: %s (time %02d:%02d)" % (action, self.minutes, self.seconds))
+                    try:
+                        actions[action]()
+                    except Exception as e:
+                        logging.warning("Failed to execute action %s (%s)" % (action, str(e)))
 
+                idx += 1
             time.sleep(5)
         return        
 
@@ -215,15 +215,45 @@ class Master:
             time.sleep(5)
         return     
         
+    def restartAll(self):
+        #rpi.resetNetwork()
+        #time.sleep(3)
+        self.player.setTrack1(0)
+        self.player.setTrack2(0)
+        self.player.setTrack3(0)
+        self.bomb.getDone(False)
+        self.dimmer.getDone(False)
+        self.dimmer.setDimmer1(100)
+        self.dimmer.setDimmer2(100)
+        
     def loop(self):
         try:
-            self.bomb.setTime(60, 0)
-            self.bomb.setEnabled(True)
-            self.dimmer.setDimmer1(15)
-            self.dimmer.setDimmer2(20)
+            while self.script:
+                line = self.script.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if not line:
+                    continue
+                fields = line.split()
+                if len(fields) != 2:
+                    logging.warning("Expected 2 fields per line in script file")
+                    continue
+                (timeString, action) = fields
+                (minString, secString) = timeString.split(':')
+                timeStamp = int(minString) + int(secString) / 60.0
+                self.timeTable.append((timeStamp, action))
+            pass
+        except Exception as e:
+            logging.warning("Exception while reading script (%s)" % str(e))
+
+        logging.info("Loaded %d entries in script" % (len(self.timeTable)))
+
+        try:
+            self.restartAll()
         except Exception as e:
             logging.warning("Failed to initialize nodes (%s)" % str(e))
-
+            
         t1 = threading.Thread(target=self.timeTicker)
         t2 = threading.Thread(target=self.timeSyncer)
         t3 = threading.Thread(target=self.player1Thread)
@@ -233,10 +263,11 @@ class Master:
         t1.start()
         t2.start()
         t3.start()
-        #rpi.resetNetwork()
-        #time.sleep(3)
 
         webapp.app.config['MASTER'] = self
+        webapp.app.logger.setLevel(logging.WARNING)
+        log = logging.getLogger('werkzeug')
+        if log: log.setLevel(logging.WARNING)
         webapp.app.run(debug=False, host='0.0.0.0', port=8082)
         
         while True:
@@ -272,17 +303,22 @@ def main(args):
   ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
   bus = Bus(ser)
 
-  master = Master(bus)
+  script = None
+  try:
+      if args.script:
+          script = open(args.script)
+  except Exception as e:
+      logging.warning("Unable to open script file (%s)" % str(e))
+  master = Master(bus, script)
   master.loop()
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
+  parser = argparse.ArgumentParser(description = 'Metro@roombreak master scheduler')
 
   parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
   parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
-  parser.add_argument('-n', '--node', help = 'Node identifier')
-  parser.add_argument('-R', '--reset', help = 'Reboot', action = 'store_true', default = False)
   parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
+  parser.add_argument('-s', '--script', help = 'Script')
 
   args = parser.parse_args(sys.argv[1:])
   

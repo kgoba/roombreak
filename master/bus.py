@@ -146,15 +146,17 @@ class Bus:
         address = self.ADDRESS_MAP[address]
         params2 = None
         with self.lock:
+            packetOut = self.makePacket(address, command, params)
             for nTry in range(nRetries):
-                packetOut = self.makePacket(address, command, params)
                 self.send(packetOut)
                 packetIn = self.receivePacket()
                 packetIn = self.parsePacket(packetIn)
                 if not packetIn:
+                    time.sleep(0.1)
                     continue
                 (address2, cmd2, params2, request2) = packetIn
                 if (address2 != address) or (cmd2 != command) or request2:
+                    time.sleep(0.1)
                     continue
                 break
         return params2
@@ -219,7 +221,7 @@ def main(args):
   logging.basicConfig(level = level)
   logging.debug(args)
 
-  ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
+  ser = rs485.RS485(args.DEV, args.baudrate, timeout = 0.5, writeTimeout = 0.24)
   crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)
   bus = Bus(ser, crc)
 

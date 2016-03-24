@@ -4,7 +4,9 @@
  * Guillermo A. Amaral B. <g@maral.me>
  *
  */
- 
+
+#include "gpio.h"
+
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -12,9 +14,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define BUFFER_MAX 5
+
 int GPIOExport(int pin)
 {
-#define BUFFER_MAX 3
 	char buffer[BUFFER_MAX];
 	ssize_t bytes_written;
 	int fd;
@@ -26,7 +29,8 @@ int GPIOExport(int pin)
 	}
  
 	bytes_written = snprintf(buffer, BUFFER_MAX, "%d", pin);
-	write(fd, buffer, bytes_written);
+	printf("%s\n", buffer);
+        write(fd, buffer, bytes_written);
 	close(fd);
 	return(0);
 }
@@ -53,12 +57,13 @@ int GPIODirection(int pin, int dir)
 {
 	static const char s_directions_str[]  = "in\0out";
  
-#define DIRECTION_MAX 35
+#define DIRECTION_MAX 80
 	char path[DIRECTION_MAX];
 	int fd;
  
 	snprintf(path, DIRECTION_MAX, "/sys/class/gpio/gpio%d/direction", pin);
-	fd = open(path, O_WRONLY);
+	printf("%s\n", path);
+        fd = open(path, O_WRONLY);
 	if (-1 == fd) {
 		fprintf(stderr, "Failed to open gpio direction for writing!\n");
 		return(-1);
@@ -75,7 +80,7 @@ int GPIODirection(int pin, int dir)
  
 int GPIORead(int pin)
 {
-#define VALUE_MAX 30
+#define VALUE_MAX 80
 	char path[VALUE_MAX];
 	char value_str[3];
 	int fd;
