@@ -139,6 +139,9 @@ namespace P2KConfig {
 
 namespace PBXConfig {
   const byte BUS_ADDRESS = ADDRESS_PBX;
+  
+  const byte CMD_DONE1  = 0x10;
+  const byte CMD_DONE2  = 0x11;
 };
 
 namespace WCConfig {

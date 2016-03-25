@@ -1,9 +1,12 @@
 #pragma once
 
 #define N_DIGITS          4
-#define NUMBER_FINISH     "1234"
-#define NUMBER1           "2332"
-#define NUMBER2           "02"
+#define NUMBER_SOLVE1     "1234"
+#define NUMBER_SOLVE2     "5996"
+#define NUMBER_01         "01"
+#define NUMBER_02         "02"
+#define NUMBER_03         "03"
+#define NUMBER_ADMIN      "04"
 
 // analog sense pins
 #define PIN_SENSE1        7
@@ -22,6 +25,8 @@
 #define XPIN_TRSEL0  15
 #define XPIN_TRSEL1  14
 #define XPIN_TRSEL2  13
+#define XPIN_TRSEL3  17
+#define XPIN_TRSEL4  16
 
 //#define PLAYER1_PINS      {15, 14, 13, 17, 16}
 //#define PLAYER2_PINS      {9, 10, 11, 13, 7}
@@ -32,6 +37,7 @@
 #define TRACK_DIAL        1
 #define TRACK_CALL        2
 #define TRACK_BUSY        3
+#define TRACK_SOLVED      99
 #define TRACKS_RESPONSE   {10,11,12,13,14}
 
 // sense threshold voltages (in Volts)

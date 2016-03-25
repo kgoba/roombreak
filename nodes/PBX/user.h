@@ -44,6 +44,15 @@ private:
     TIMER_BREAK, TIMER_INTERDIGIT, TIMER_CALL,
     N_TIMERS 
   };
+  
+  enum {
+    DIAL_SOLVE1,
+    DIAL_SOLVE2,
+    DIAL01,
+    DIAL02,
+    DIAL03,
+    DIAL_ADMIN
+  };
 
   PLine _line;
   State _state;    
@@ -52,6 +61,9 @@ private:
   int   _currentDigit;
   int   _nDigits;
   char  _dialNumber[N_DIGITS];
+  byte  _dialled;
+
+  static const char  * _numbers [];
 
   void setState(State state);
   void startTimer(int type, int timeout);

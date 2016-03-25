@@ -2,12 +2,16 @@
 
 #include <Common/serial.h>
 
+#include <string.h>
+
+const char  * PUser::_numbers[] = { NUMBER_ADMIN, NUMBER_01, NUMBER_02, NUMBER_03, NUMBER_SOLVE1, NUMBER_SOLVE2 };
+
 void PUser::setState(State state)
 {
   switch (state) {
     case IDLE:
     {      
-      Serial::println("State -> IDLE");
+      //Serial::println("State -> IDLE");
       stopTimer(TIMER_CALL);
       stopTimer(TIMER_DIALSTART);
       _line.setTone(PLine::TONE_OFF);
@@ -15,30 +19,31 @@ void PUser::setState(State state)
     }
     case OFFHOOK:
     {
-      Serial::println("State -> OFFHOOK");
+      //Serial::println("State -> OFFHOOK");
       startTimer(TIMER_DIALSTART, 8000);      // time until dialing has to start
       _line.setTone(PLine::TONE_DIAL);
       _currentDigit = 0;
       _nDigits = 0;
+      _dialled = 0xFF;
       break;
     }
     case BUSY:
     {
-      Serial::println("State -> BUSY");
+      //Serial::println("State -> BUSY");
       _line.setTone(PLine::TONE_BUSY);
       break;
     }
     case DIAL:
     {
-      Serial::println("State -> DIAL");
+      //Serial::println("State -> DIAL");
       stopTimer(TIMER_DIALSTART);
       _line.setTone(PLine::TONE_OFF);
       break;
     }
     case CALL:
     {
-      Serial::println("State -> CALL");
-      startTimer(TIMER_CALL, 12000);
+      //Serial::println("State -> CALL");
+      startTimer(TIMER_CALL, 2000);
       _line.setTone(PLine::TONE_CALL);
       break;
     }
@@ -97,7 +102,7 @@ void PUser::onTimer(int type)
   switch (type) {
     case TIMER_DIALSTART:
     {
-      Serial::println("Timer DIALSTART");
+      //Serial::println("Timer DIALSTART");
       setState(BUSY);
       break;
     }
@@ -118,7 +123,7 @@ void PUser::onTimer(int type)
       //Serial::println("Timer BREAK");
       _currentDigit++;
       if (_currentDigit > 10) {
-        Serial::println("Dial Error");
+        //Serial::println("Dial Error");
         setState(BUSY);
       }
       break;
@@ -127,26 +132,39 @@ void PUser::onTimer(int type)
     {
       if (_currentDigit == 10) _currentDigit = 0;
       //Serial::println("Timer INTERDIGIT");
+      /*
       Serial::print("Dial ");
       Serial::putChar(_currentDigit + '0');
       Serial::println("");
-      
+      */
       // digit finished
       // check with operator
-      //_dialNumber[_nDigits] = (_currentDigit < 10) : '0' + _currentDigit : '0';
+      if (_nDigits < N_DIGITS) _dialNumber[_nDigits] = '0' + _currentDigit;
       _nDigits++;
       _currentDigit = 0;
-      if (_nDigits == 4) {
-        setState(CALL);
+      
+      bool found = false;
+      for (byte iNumber = 0; iNumber < ARRAY_SIZE(_numbers); iNumber++) {
+        if (_nDigits <= N_DIGITS && _nDigits == strlen(_numbers[iNumber]) 
+            && 0 == memcmp(_dialNumber, _numbers[iNumber], _nDigits)) 
+        {
+          _dialled = iNumber;
+          setState(CALL);
+          break;
+        }
       }
       break;
     }
     case TIMER_CALL:
     {
-      Serial::println("Timer CALL");
-      //setState(BUSY);
-      setState(IDLE);
-      _line.playCustom(5);
+      //Serial::println("Timer CALL");
+      if (_dialled != 0xFF) {
+        setState(IDLE);
+        _line.playCustom(10 + _dialled);
+      }
+      else {
+        setState(BUSY);
+      }
       break;
     }
   }
