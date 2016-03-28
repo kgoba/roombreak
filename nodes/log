@@ -1,0 +1,63 @@
+INFO:root:Rebooting...
+DEBUG:root:Sent [AF 6A DE 1A 7F 00 9F] (7 b)
+DEBUG:root:Reading 8 bytes
+DEBUG:root:Recv [AF 6A DE 1A FF 01 0A 9C] (8 b)
+INFO:root:Connecting...
+DEBUG:root:Reading 16 bytes
+DEBUG:root:Got 16 bytes : [5453421a1ff01e950f40c03dff03aaaa]
+INFO:root:Page size 128, flash size 31616, EEPROM size 2046
+DEBUG:root:Reading 1 bytes
+INFO:root:Connected
+INFO:root:Writing to flash...
+DEBUG:root:Read 2618 bytes from HEX file
+DEBUG:root:Sending write flash command...
+INFO:root:20 pages to send
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 0
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 1
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 2
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 3
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 4
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 5
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 6
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 7
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 8
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 9
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 10
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 11
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 12
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 13
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 14
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 15
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 16
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 17
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 18
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 19
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Sending page 20
+DEBUG:root:Reading 1 bytes
+DEBUG:root:Confirming command
+DEBUG:root:Reading 1 bytes
+INFO:root:Flash write successful
+INFO:root:Running application...

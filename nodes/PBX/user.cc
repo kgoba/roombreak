@@ -149,10 +149,11 @@ void PUser::onTimer(int type)
             && 0 == memcmp(_dialNumber, _numbers[iNumber], _nDigits)) 
         {
           _dialled = iNumber;
+          setState(CALL);
           break;
         }
       }
-      setState(CALL);
+      if (_nDigits == 4) setState(CALL);
       break;
     }
     case TIMER_CALL:
