@@ -84,10 +84,10 @@ class Master:
         self.seconds = 0
         self.script = script
         self.timeTable = []
+        self.gameState = 'service'
 
     def setDone(self, address, isDone):
         if address in self.nodeMap:
-            
             if isDone == False:
                 logging.info("Resetting %s" % address)
             elif isDone == True:
@@ -97,18 +97,52 @@ class Master:
 
     def getStatus(self):
         response = {}
-        response['status'] = "Pauze"
+        response['status'] = self.gameState
         response['doorsOpen'] = False
-
         for name in self.nodeMap:
             values = self.nodeMap[name].getAllValues()
             response[name] = values
-
         return response
         
     def getTime(self):
         return 60 - (self.minutes + self.seconds / 60.0)
 
+    def setGameState(self, newState):
+        self.gameState = newState
+
+        
+    def restartAll(self):
+        self.rpi.resetNetwork()
+        time.sleep(3.5)
+        #self.player.setTrack1(0)
+        #self.player.setTrack2(0)
+        #self.player.setTrack3(0)
+        #self.bomb.getDone(False)
+        #self.dimmer.getDone(False)
+        #self.dimmer.setDimmer1(100)
+        #self.dimmer.setDimmer2(100)
+        
+    def startGame(self):
+        self.minutes = 60
+        self.seconds = 0
+        self.bomb.setTime(self.minutes, self.seconds)
+        self.bomb.setEnabled(True)
+        self.dimmer.setDimmer1(40)
+        self.dimmer.setDimmer2(25)  
+        self.dimmer.setDimmer3(0)
+        self.dimmer.setDimmer4(0)
+
+    def ledsOn(self):
+        self.dimmer.setDimmer4(10)
+        self.dimmer.setDimmer1(25)
+        self.dimmer.setDimmer2(50)
+    
+    def ledsOff(self):
+        self.dimmer.setDimmer4(0)
+        self.dimmer.setDimmer1(50)
+        self.dimmer.setDimmer2(25)
+        
+        
     def timeSyncer(self):
         logging.info("Status/time updater thread started")
         while True:
@@ -146,28 +180,8 @@ class Master:
                     self.seconds -= 1
             time.sleep(1)
         return
-    
-    def startGame(self):
-        self.minutes = 60
-        self.seconds = 0
-        self.bomb.setTime(self.minutes, self.seconds)
-        self.bomb.setEnabled(True)
-        self.dimmer.setDimmer1(40)
-        self.dimmer.setDimmer2(25)  
-        self.dimmer.setDimmer3(0)
-        self.dimmer.setDimmer4(0)
-
-    def ledsOn(self):
-        self.dimmer.setDimmer4(10)
-        self.dimmer.setDimmer1(25)
-        self.dimmer.setDimmer2(50)
-    
-    def ledsOff(self):
-        self.dimmer.setDimmer4(0)
-        self.dimmer.setDimmer1(50)
-        self.dimmer.setDimmer2(25)
  
-    def player1Thread(self):
+    def scriptThread(self):
         logging.info("Scheduler thread started")
         
         actions = {
@@ -222,30 +236,6 @@ class Master:
             time.sleep(5)
         return        
 
-    def player2Thread(self):
-        actionLaugh = lambda: self.player.setTrack2(2)
-        actionAnnounce = lambda: self.player.setTrack2(1)
-        
-        startSound = false
-        while True:
-            #if self.time < 0.5 and not startSound:
-                #actionLaugh()
-            #    startSound = True
-
-            time.sleep(5)
-        return     
-        
-    def restartAll(self):
-        self.rpi.resetNetwork()
-        time.sleep(3.5)
-        #self.player.setTrack1(0)
-        #self.player.setTrack2(0)
-        #self.player.setTrack3(0)
-        #self.bomb.getDone(False)
-        #self.dimmer.getDone(False)
-        #self.dimmer.setDimmer1(100)
-        #self.dimmer.setDimmer2(100)
-        
     def loop(self):
         try:
             while self.script:
@@ -276,7 +266,7 @@ class Master:
         
         t1 = threading.Thread(target=self.timeTicker)
         t2 = threading.Thread(target=self.timeSyncer)
-        t3 = threading.Thread(target=self.player1Thread)
+        t3 = threading.Thread(target=self.scriptThread)
         t1.daemon = True
         t2.daemon = True
         t3.daemon = True

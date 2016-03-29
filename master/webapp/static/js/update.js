@@ -7,6 +7,23 @@ function getTimeString(minutes, seconds)
     return ("00" + minutes).slice(-2) + ":" + ("00" + seconds).slice(-2)
 }
 
+function request(method, params, onSuccess) {
+    var result = {};
+    $.getJSON(method, params, function(response) {
+        if (undefined != response.success && response.success) {
+            hideError();
+            onSuccess(response);
+        }
+        else {
+            showError(response.error + ' (' + method + ')');
+        }
+    } )
+    .fail(function() {
+        showError("Nav atbildes" + ' (' + method + ')');        
+    });
+    return result;
+}
+
 function updateNode(name, data) {
     var idStatus = '#' + name
     var idOK = "#" + name + ' .iconOK'
@@ -43,49 +60,88 @@ function tickSecond() {
 }
     
 function syncTime() {
-    $.getJSON('/_time', {}, function(data) {
-        if (undefined != data.minutes) {
-            minutes = data.minutes;
+    var response = request('/_time', {}, function(response) {
+        if (undefined != response.minutes) {
+            minutes = response.minutes;
         }
-        if (undefined != data.seconds) {
-            seconds = data.seconds;
-        }
+        if (undefined != response.seconds) {
+            seconds = response.seconds;
+        }        
     });
     return false;
 }
 
 function refreshStatus() {
-  $.getJSON('/_status', {}, function(data) {
-    $("#status").text(data.status);
+    var response = request('/_status', {}, function(response) {
+        if (undefined != response.status) {
+            $("#status").text(response.status);        
+            var showPause = (response.status == "pause");
+            var showPlay = (response.status == "active");
+            var showService = (response.status == "service");
+
+            if (showPause) $("#statusPause").show();
+            else $("#statusPause").hide();
+
+            if (showPlay) $("#statusPlay").show();
+            else $("#statusPlay").hide();
+
+            if (showService) $("#statusService").show();
+            else $("#statusService").hide();
+        }
     
-    if (data.doorsOpen) {
-        $("#doorState").text("ATVĒRTAS");                    
-        $("#doorsOpen").show();
-        $("#doorsClosed").hide();
-    }
-    else {
-        $("#doorState").text("AIZVĒRTAS");                                        
-        $("#doorsOpen").hide();
-        $("#doorsClosed").show();
-    }
+        if (undefined != response.doorsOpen) {
+            if (response.doorsOpen) {
+                $("#doorState").text("ATVĒRTAS");                    
+                $("#doorsOpen").show();
+                $("#doorsClosed").hide();
+            }
+            else {
+                $("#doorState").text("AIZVĒRTAS");                                        
+                $("#doorsOpen").hide();
+                $("#doorsClosed").show();
+            }
+        }
+        
+        for (var index = 0; index < nodeList.length; index++) {
+            var name = nodeList[index];
+            updateNode(name, response[name]);   
+        }
     
-    for (var index = 0; index < nodeList.length; index++) {
-        var name = nodeList[index];
-        updateNode(name, data[name]);   
-    }
+        if (response.VALVE != undefined && response.VALVE.digit != undefined) {
+            $("#VALVE .digit").text(response.VALVE.digit);        
+        }        
+    });
     
-    $("#VALVE .digit").text(data.VALVE.digit);
-    
-  });
-  return false;
+    return false;
+}
+
+function showError(message) {
+    $('#errorAlert').removeClass("hidden");
+    $('#errorMessage').text(message);    
+}
+
+function hideError() {
+    $('#errorAlert').addClass("hidden");
 }
 
 function resetNode(name) {
-    $.getJSON('/_setDone', { id: name, done: false } );
+    request('/_setDone', { id: name, done: false } );
 }
 
 function finishNode(name) {
-    $.getJSON('/_setDone', { id: name, done: true } );
+    request('/_setDone', { id: name, done: true } );
+}
+
+function enterMaintenance() {
+    request('/_setGameState', { state: 'service' } );
+}
+
+function startGame() {
+    request('/_setGameState', { state: 'active' } );
+}
+
+function pauseGame() {
+    request('/_setGameState', { state: 'pause' } );
 }
 
 //$(function() {
@@ -101,8 +157,12 @@ $(document).ready(function(){
             $(id2).bind('click', function() {
                 finishNode(name);
             });            
-        })('#' + name + ' .btnReset', '#' + name + ' .btnFinish', name)
+        })('#' + name + ' .btnReset', '#' + name + ' .btnFinish', name);
     }
+    
+    $('.btnStart').bind('click', startGame);
+    $('.btnPause').bind('click', pauseGame);
+    $('.btnService').bind('click', enterMaintenance);
         
     syncTime();
     refreshStatus();
