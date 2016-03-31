@@ -101,7 +101,7 @@ class Master:
             logging.warning("Exception while reading script (%s)" % str(e))
 
         self.gameState = 'service'
-        self.setGameState('service')
+        #self.setGameState('service')
 
     def setDone(self, address, isDone):
         if address in self.nodeMap:
@@ -115,6 +115,7 @@ class Master:
     def getStatus(self):
         response = {}
         response['status'] = self.gameState
+        response['gameEnabled'] = self.rpi.gameEnabled()
         response['doorsOpen'] = False
         for name in self.nodeMap:
             values = self.nodeMap[name].getAllValues()
@@ -125,10 +126,13 @@ class Master:
         return 60 - (self.minutes + self.seconds / 60.0)
 
     def setGameState(self, newState):
-        logging.info("Entering game state \"%s\"" % newState)
         if newState == 'service':
             self.rpi.resetNetwork()
             time.sleep(3.5)
+
+            self.minutes = 60
+            self.seconds = 0
+            self.bomb.setTime(self.minutes, self.seconds)
             #self.player.setTrack1(0)
             #self.player.setTrack2(0)
             #self.player.setTrack3(0)
@@ -137,18 +141,28 @@ class Master:
             #self.dimmer.setDimmer1(100)
             #self.dimmer.setDimmer2(100)
         elif newState == 'active':
-            self.minutes = 60
-            self.seconds = 0
-            self.bomb.setTime(self.minutes, self.seconds)
-            #self.bomb.setEnabled(True)
-            self.dimmer.setDimmer1(40)
-            self.dimmer.setDimmer2(25)  
-            self.dimmer.setDimmer3(0)
-            self.dimmer.setDimmer4(0)
+            if self.gameState != 'pause':
+                return
+            self.dimmer.setDimmer1(self.lastDimmer1)
+            self.dimmer.setDimmer2(self.lastDimmer2)
+            self.bomb.setEnabled(True)
+            pass
         elif newState == 'pause':
-            self.bomb.setEnabled(False)
-            self.dimmer.setDimmer1(100)
-            self.dimmer.setDimmer2(100)
+            if self.gameState == 'active':
+                return
+                self.lastDimmer1 = self.dimmer.getDimmer1()
+                self.lastDimmer2 = self.dimmer.getDimmer2()
+                self.bomb.setEnabled(False)
+                self.dimmer.setDimmer1(100)
+                self.dimmer.setDimmer2(100)
+            else:
+                self.lastDimmer1 = self.dimmer.setDimmer1(40)
+                self.lastDimmer2 = self.dimmer.setDimmer2(25)
+                self.dimmer.setDimmer3(0)
+                self.dimmer.setDimmer4(0)
+            pass
+ 
+        logging.info("Entering game state \"%s\"" % newState)
         self.gameState = newState
         
     def ledsOn(self):
@@ -253,25 +267,9 @@ class Master:
                 continue
 
             if self.gameState == 'pause':
-            #or (self.gameState == 'active' and not self.rpi.gameEnabled()):
                 time.sleep(1)
                 continue
 
-            if not self.rpi.gameEnabled():
-                if self.bomb.enabled:
-                    self.bomb.setEnabled(False)
-                    lastDimmer1 = self.dimmer.getDimmer1()
-                    lastDimmer2 = self.dimmer.getDimmer2()
-                    self.dimmer.setDimmer1(100)
-                    self.dimmer.setDimmer2(100)
-                time.sleep(1)
-                continue
-            else:
-                if not self.bomb.enabled:
-                    self.bomb.setEnabled(True)
-                    if lastDimmer1: self.dimmer.setDimmer1(lastDimmer1)
-                    if lastDimmer2: self.dimmer.setDimmer2(lastDimmer2)
- 
             if idx >= len(timeKeys): 
                 logging.info("Script execution complete")
                 time.sleep(60)

@@ -1,6 +1,7 @@
 var minutes = 60;
 var seconds = 0;
 var nodeList = ["BOMB", "VALVE", "FLOOR", "RFID", "KEY", "PBX", "P2K", "MAP", "WC", "SNAKE"];
+var gameActive = false;
 
 function getTimeString(minutes, seconds)
 {
@@ -47,14 +48,16 @@ function updateNode(name, data) {
 }
 
 function tickSecond() {
-    if (seconds == 0) {
-        if (minutes > 0) {
-            minutes -= 1;
+    if (gameActive) {
+        if (seconds == 0) {
+            if (minutes > 0) {
+                minutes -= 1;
+            }
+            seconds = 59;
         }
-        seconds = 59;
-    }
-    else {
-        seconds -= 1;
+        else {
+            seconds -= 1;
+        }
     }
     $("#timeLeft").text(getTimeString(minutes, seconds));
 }
@@ -74,21 +77,41 @@ function syncTime() {
 function refreshStatus() {
     var response = request('/_status', {}, function(response) {
         if (undefined != response.status) {
-            $("#status").text(response.status);        
+            //$("#status").text(response.status);        
+            gameActive = response.status == "active";
+
             var showPause = (response.status == "pause");
             var showPlay = (response.status == "active");
             var showService = (response.status == "service");
 
-            if (showPause) $("#statusPause").show();
+            if (showPause) {
+                $("#statusPause").show();
+                $("#status").text("IEVADS");
+                $(".btnPause").addClass("active");
+                $(".btnStart").removeClass("disabled");
+            }
             else $("#statusPause").hide();
 
-            if (showPlay) $("#statusPlay").show();
+            if (showPlay) {
+                $("#statusPlay").show();
+                $("#status").text("AKTĪVA");
+                $(".btnPause").removeClass("active");
+                $(".btnStart").addClass("active");
+                $(".btnPause").addClass("disabled");
+            }
             else $("#statusPlay").hide();
 
-            if (showService) $("#statusService").show();
+            if (showService) {
+                $("#statusService").show();
+                $("#status").text("APKOPE");
+                $(".btnPause").removeClass("disabled");
+                $(".btnPause").removeClass("active");
+                $(".btnStart").removeClass("active");
+                $(".btnStart").addClass("disabled");
+            }
             else $("#statusService").hide();
         }
-    
+
         if (undefined != response.doorsOpen) {
             if (response.doorsOpen) {
                 $("#doorState").text("ATVĒRTAS");                    
