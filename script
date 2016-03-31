@@ -1,4 +1,10 @@
-    0:00     StartGame
+# Metro game script
+# 
+# Lines beginning with '#' and empty lines are ignored
+#
+# 0:00 - game start
+
+
     0:00     Laugh
 
     3:00     Radio

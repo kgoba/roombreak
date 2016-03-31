@@ -80,7 +80,7 @@ def setGameState():
     return ''
     
 def startServer():        
-    app.run(debug=False, host='0.0.0.0', port = 8082)
+    app.run(debug=False, host='0.0.0.0', port = 8088)
 
 # start the server with the 'run()' method
 if __name__ == '__main__':

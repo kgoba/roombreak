@@ -301,6 +301,20 @@ class Dimmer(NodeBase):
         NodeBase.__init__(self, bus, "DIMMER")
         self.dimmer1 = None
 
+    def getDimmer1(self):
+        params = self.tryCommand(self.CMD_DIMMER1)
+        if params:
+            self.dimmer1 = self.decodeByte(params)
+            return self.dimmer1
+        return None
+
+    def getDimmer2(self):
+        params = self.tryCommand(self.CMD_DIMMER2)
+        if params:
+            self.dimmer2 = self.decodeByte(params)
+            return self.dimmer2
+        return None
+
     def setDimmer1(self, newValue):
         params = self.tryCommand(self.CMD_DIMMER1, self.encodeByte(newValue))
         if params:
