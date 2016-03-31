@@ -61,13 +61,17 @@ def main(args):
       rpi.setDoors(False)
     if cmd == 'snake':
       rpi.setSnake(True)
-
+    if cmd == 'uart':
+      ser = rs485.RS485(args.port, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
+      while True:
+        ser.write([0xAA])
+        time.sleep(0.020)
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description = 'TinySafeBoot command-line tool')
 
-  parser.add_argument('-p', help = 'Serial port device', metavar='DEV', dest = 'DEV')
+  parser.add_argument('-p', '--port', help = 'Serial port device')
   parser.add_argument('-b', '--baudrate', help = 'Serial baudrate (default 19200)', type = int, default = 19200)
   parser.add_argument('-n', '--node', help = 'Node identifier')
   parser.add_argument('-R', '--reset', help = 'Reboot', action = 'store_true', default = False)
