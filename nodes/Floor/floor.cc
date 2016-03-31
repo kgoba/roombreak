@@ -68,6 +68,7 @@ void taskComplete() {
   //bit_set(gFlags, FLAG_DONE);
 }
 
+
 byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
 {
   switch (cmd) {    
@@ -122,7 +123,7 @@ void setup() {
 
 void loop() {  
   // DO SOMETHING
-  if (!taskIsDone()) {
+  if (!taskIsDone() && taskIsEnabled()) {
     bool triggerSound = false;
     for (byte idx = 0; idx < ARRAY_SIZE(pinSense); idx++) {
       bool newState = (pinRead(pinSense[idx]) == LOW);

@@ -85,7 +85,7 @@ void setup() {
 
 void loop() {  
   //if (!gTaskDone) 
-  {
+  if (taskIsEnabled()) {
     if (gState == kINIT && bit_check(gFlags, FLAG_TIMEOUT)) {
       servoOff();
       gState = kCLOSED;

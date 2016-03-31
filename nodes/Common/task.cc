@@ -11,15 +11,23 @@ static Serial serial;
 static NewBus bus;
 static byte busParams[BUS_NPARAMS];
 
+static bool gTaskEnabled;
+
+bool taskIsEnabled() {
+  return gTaskEnabled;
+}
+
 static byte busCallback(byte cmd, byte nParams, byte *nResults)
 {
   byte result = 0;
   switch (cmd) {
-    case CMD_INIT:
+    case CMD_ENABLED:
     {
-      //gTaskDone = 0;
-      //nResults = 1;
-      //busParams[0] = gInitDone;
+      if (nParams > 0) {
+        gTaskEnabled = busParams[0];
+      }
+      *nResults = 1;
+      busParams[0] = gTaskEnabled;
       break;      
     }
     
@@ -46,6 +54,7 @@ void taskSetup(byte address) {
   serial.setup(BUS_SPEED, PIN_TXE, PIN_RXD);
   serial.enable();  
   bus.setup(address, &busCallback, busParams, BUS_NPARAMS);
+  gTaskEnabled = true;
 }
 
 void taskLoop() {

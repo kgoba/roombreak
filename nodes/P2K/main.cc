@@ -97,49 +97,60 @@ void loop() {
   if (bit_check(gFlags, FLAG_BLINK))
   {
     bit_clear(gFlags, FLAG_BLINK);
-    
-    if (!taskIsDone()) {
-      bool ok1 = true;
-      bool ok2 = true;
-      for (byte idx = 0; idx < 5; idx++) {
-        byte state = panel.getButtons(idx);
-        byte state1 = state & 0x0F;
-        byte state2 = state & 0xF0;
-        byte mask1 = 1 << (4 - SOLUTION1[idx]);
-        byte mask2 = 1 << (8 - SOLUTION2[idx]);
-        if (state1 != mask1) {
-          ok1 = false;
-        }
-        if (state2 != mask2) {
-          ok2 = false;
-        }
-        //if (!gTaskDone) {
-        //  panel.setLED(idx, (state1 == mask1));
-        //  panel.setLED(idx + 5, (state2 == mask2));
-        //}
+
+    bool ok1 = true;
+    bool ok2 = true;
+    for (byte idx = 0; idx < 5; idx++) {
+      byte state = panel.getButtons(idx);
+      byte state1 = state & 0x0F;
+      byte state2 = state & 0xF0;
+      byte mask1 = 1 << (4 - SOLUTION1[idx]);
+      byte mask2 = 1 << (8 - SOLUTION2[idx]);
+      if (state1 != mask1) {
+        ok1 = false;
       }
-    
+      if (state2 != mask2) {
+        ok2 = false;
+      }
+      //if (!gTaskDone) {
+      //  panel.setLED(idx, (state1 == mask1));
+      //  panel.setLED(idx + 5, (state2 == mask2));
+      //}
+    }
+  
+    bool wasDone = taskIsDone();
       if (!gSolved1 && ok1) {
-        gSolved1 = true;
         for (byte idx = 0; idx < 5; idx++) panel.setLED(idx, true);
+        gSolved1 = ok1;
       }
       if (!gSolved2 && ok2) {
-        gSolved2 = true;
         for (byte idx = 0; idx < 5; idx++) panel.setLED(idx + 5, true);
+        gSolved2 = ok2;
+      }
+      if (gSolved1 && !ok1) {
+        for (byte idx = 0; idx < 5; idx++) panel.setLED(idx, false);
+        gSolved1 = ok1;
+      }
+      if (gSolved2 && !ok2) {
+        for (byte idx = 0; idx < 5; idx++) panel.setLED(idx + 5, false);
+        gSolved2 = ok2;
       }
       if (taskIsDone()) {
-        led = 0; 
-        phase = true; 
-        taskComplete();
+        
+        if (!wasDone) {
+          led = 0; 
+          phase = true; 
+          taskComplete();
+          
+        }
+
+        panel.setLED(led, phase);            
+        if (++led >= 10) {
+          led = 0;
+          phase = !phase;
+        }
       }
-    }
-    else {
-      panel.setLED(led, phase);            
-      if (++led >= 10) {
-        led = 0;
-        phase = !phase;
-      }
-    }
+    
   }
 
   taskLoop();

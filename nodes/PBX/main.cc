@@ -41,6 +41,8 @@ bool gSolved2;
 
 void taskComplete() {
   //
+  gSolved1 = true;
+  gSolved2 = true;
 }
 
 void taskRestart() {
@@ -50,7 +52,7 @@ void taskRestart() {
 }
 
 byte taskIsDone() {
-  return false;
+  return gSolved1 && gSolved2;
 }
 
 byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)

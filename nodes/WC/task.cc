@@ -181,40 +181,42 @@ void loop() {
     bit_clear(gFlags, FLAG_TIMEOUT);
   }
 
-  /*
-  bool b1 = btn1.get();
-  bool b2 = btn2.get();
-  bool b3 = btn3.get();
-  bool b4 = btn4.get();
-  */
-  bool b1 = (pinRead(PIN_BTN1) == LOW);
-  bool b2 = (pinRead(PIN_BTN2) == LOW);
-  bool b3 = (pinRead(PIN_BTN3) == LOW);
-  bool b4 = (pinRead(PIN_BTN4) == LOW);
-  gButtonState = 0;
-  if (b1) gButtonState |= 1;
-  if (b2) gButtonState |= 2;
-  if (b3) gButtonState |= 4;
-  if (b4) gButtonState |= 8;
+  if (taskIsEnabled()) {  
+    /*
+    bool b1 = btn1.get();
+    bool b2 = btn2.get();
+    bool b3 = btn3.get();
+    bool b4 = btn4.get();
+    */
+    bool b1 = (pinRead(PIN_BTN1) == LOW);
+    bool b2 = (pinRead(PIN_BTN2) == LOW);
+    bool b3 = (pinRead(PIN_BTN3) == LOW);
+    bool b4 = (pinRead(PIN_BTN4) == LOW);
+    gButtonState = 0;
+    if (b1) gButtonState |= 1;
+    if (b2) gButtonState |= 2;
+    if (b3) gButtonState |= 4;
+    if (b4) gButtonState |= 8;
 
-  dimLight.set(b2 && !(b1 && b3 && b4));
-  if (b3) fanRampUp(2);
-  else fanRampDown(4);
+    dimLight.set(b2 && !(b1 && b3 && b4));
+    if (b3) fanRampUp(2);
+    else fanRampDown(4);
   
-  if (pinRead(PIN_PIR) == LOW) {
-    player1.play(1);
-    //_delay_ms(5);
-    //player1.stop();
-  }
-  else player1.stop();
+    if (pinRead(PIN_PIR) == LOW) {
+      player1.play(1);
+      //_delay_ms(5);
+      //player1.stop();
+    }
+    else player1.stop();
 
-  dimUV.set(b1 && b2 && b3 && b4);
+    dimUV.set(b1 && b2 && b3 && b4);
   
-  if (b1 && b2 && b3 && b4) {
-    if (!taskIsDone())
-      taskComplete();
+    if (b1 && b2 && b3 && b4) {
+      if (!taskIsDone())
+        taskComplete();
+    }
+    //else pinWrite(PIN_FAN, LOW); //fan.off();
   }
-  //else pinWrite(PIN_FAN, LOW); //fan.off();
     
   taskLoop();
 }

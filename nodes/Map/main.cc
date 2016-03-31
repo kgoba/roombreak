@@ -90,7 +90,9 @@ void setup() {
 }
 
 void loop() {
-  task.loop();
+  if (taskIsEnabled()) {
+    task.loop();    
+  }
 
   taskLoop();
 }

@@ -34,7 +34,7 @@
 #define ADDRESS_ALL     0xFF      // Use this to broadcast to all nodes (no reply is sent)
 
 // Common commands
-#define CMD_INIT        0x01      // Write 1 to reset task, reads 0 while initializing, 1 when initialized successfully
+#define CMD_ENABLED     0x01      // Write 1 to reset task, reads 0 while initializing, 1 when initialized successfully
 #define CMD_DONE        0x02      // Query if task is done or force it by writing 1
 
 #define CMD_ECHO        0x00      // Echo back the same parameters

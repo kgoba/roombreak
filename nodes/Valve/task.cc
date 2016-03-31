@@ -114,7 +114,7 @@ void loop() {
   
   static byte lastWheel = 0xFF;
 
-  if (!taskIsDone()) {
+  if (!taskIsDone() && taskIsEnabled()) {
     if (gCounts[0] > COUNT_THRESHOLD) {
       if (lastWheel != 0) gDigit += VALVE1_CW;
       gCounts[0] = 0;

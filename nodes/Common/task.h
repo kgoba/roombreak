@@ -5,6 +5,7 @@
 
 void taskSetup(byte address);
 void taskLoop();
+bool taskIsEnabled();
 
 void taskRestart();
 void taskComplete();
