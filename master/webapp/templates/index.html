@@ -33,31 +33,35 @@
             </div>-->
             <table class="table">
                 <tr>
-                    <td class="">
+                    <td>
                         Spēles statuss:
                         <span class="glyphicon glyphicon-play" id="statusPlay"></span>
                         <span class="glyphicon glyphicon-pause" id="statusPause"></span>
                         <span class="glyphicon glyphicon-wrench" id="statusService"></span>
                         <span id="status"> ? </span>
                         <br>
-                        Laiks: 
-                        <span class="glyphicon glyphicon-hourglass"></span>
-                        <span id="timeLeft"> ? </span>
+                        Starta poga:
+                        <span class="glyphicon glyphicon-pause" id="enableOn"></span>
+                        <span class="glyphicon glyphicon-play" id="enablePause"></span>
+                        <span id="enableText"> ? </span>
                         <br>
                         Durvis: 
                         <span class="glyphicon glyphicon-ok-circle" aria-hidden="true" id="doorsOpen"></span>
                         <span class="glyphicon glyphicon-ban-circle" aria-hidden="true" id="doorsClosed"></span>
                         <span id="doorState"> ? </span>
                     </td>
+                    <td>
+                        <h2>
+                            Laiks: 
+                            <span class="glyphicon glyphicon-hourglass"></span>
+                            <span id="timeLeft"> ? </span>
+                        </h2>
+                    </td>
                     <td class="text-right">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-default btnPause">
-                                <span class="glyphicon glyphicon-pause" aria-hidden="true"></span>
-                                Ievads
-                            </button>
-                             <button type="button" class="btn btn-default btnStart">
+                            <button type="button" class="btn btn-default btnStart">
                                 <span class="glyphicon glyphicon-play" aria-hidden="true"></span>
-                                Sākt
+                                Sākt spēli
                             </button>
                             <button type="button" class="btn btn-default btnService">
                                 <span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
@@ -197,8 +201,8 @@
                         </button>
                     </td>
                 </tr>
-                <tr id="PBX">
-                    <td>Taksofons</td>
+                <tr id="PBX_Task1">
+                    <td>Taksofons 1</td>
                     <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td>
                         <!--
@@ -216,7 +220,26 @@
                         </button>
                     </td>
                 </tr>
-                <tr id="P2K">
+                <tr id="PBX_Task2">
+                    <td>Taksofons 2</td>
+                    <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
+                    <td>
+                        <!--
+                        <span class="glyphicon glyphicon-phone-alt"></span> 2767
+                        -->
+                    </td>
+                    <td class="text-right">                    
+                        <button type="button" class="btn btn-warning btnReset">
+                            <span class="glyphicon glyphicon-step-backward" aria-hidden="true"></span>
+                            Atsākt
+                        </button>
+                        <button type="button" class="btn btn-success btnFinish">
+                            <span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span>
+                            Pabeigt
+                        </button>
+                    </td>
+                </tr>
+                 <tr id="P2K">
                     <td>Pogas</td>
                     <td><span class="glyphicon glyphicon-ok iconOK"></span><span class="glyphicon glyphicon-alert iconAlert"></span></td>
                     <td></td>
@@ -288,7 +311,16 @@
         </div>
     
     </div>
-    
+
+    <div class="form-group">
+        <label for="setminutes">Minutes:</label>
+        <input type="text" class="form-control" id="setminutes">
+        <label for="setseconds">Seconds:</label>
+        <input type="text" class="form-control" id="setseconds">
+                            <button type="button" class="btn btn-default" id="btnSetTime">
+        Set time
+        </button>
+    </div>
     <!--
     <div class="container">
         <div class="panel panel-default">

@@ -19,6 +19,11 @@ def get_time():
         master = app.config['MASTER']
         if not master:
             raise Exception("Master object not found")
+        minutes = request.args.get('minutes', '', type=str)
+        seconds = request.args.get('seconds', '', type=str)
+        if minutes and seconds: 
+            master.setTime(int(minutes), int(seconds))
+
         minutes = master.minutes
         seconds = master.seconds
         timeLeft = "%02d:%02d" % (minutes, seconds)
