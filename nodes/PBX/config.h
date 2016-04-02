@@ -1,7 +1,7 @@
 #pragma once
 
 #define N_DIGITS          4
-#define NUMBER_SOLVE1     "1234"
+#define NUMBER_SOLVE1     "2032"
 #define NUMBER_SOLVE2     "5996"
 #define NUMBER_01         "01"
 #define NUMBER_02         "02"
