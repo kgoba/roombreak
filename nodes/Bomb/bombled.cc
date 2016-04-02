@@ -85,6 +85,7 @@ void BombLED::toggleBlink() {
 
 void BombLED::setLeds(word state) {
   _ledState = state;
+  _refresh = true;
 }
 
 word BombLED::getLeds() {
