@@ -33,28 +33,27 @@ volatile byte gState;
 P2K panel;
 bool gSolved1;
 bool gSolved2;
+bool gSolvedAll;
 bool gCashOpen;
 
 byte gCount;
 
 void taskRestart() {
-  gSolved1 = false;
-  gSolved2 = false;
+  gSolvedAll = false;
   gCashOpen = false;
   gCount = 0;
   panel.clear();
 }
 
 void taskComplete() {
-  gSolved1 = true;
-  gSolved2 = true;
+  gSolvedAll = true;
   gCount++;
   bit_set(gFlags, FLAG_OPEN);
   gCashOpen = true;
 }
 
 byte taskIsDone() {
-  return gSolved1 && gSolved2;
+  return gSolvedAll;
 }
 
 byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
@@ -135,6 +134,8 @@ void loop() {
         for (byte idx = 0; idx < 5; idx++) panel.setLED(idx + 5, false);
         gSolved2 = ok2;
       }
+      gSolvedAll = gSolved1 && gSolved2;
+      
       if (taskIsDone()) {
         
         if (!wasDone) {
