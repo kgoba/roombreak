@@ -1,10 +1,17 @@
 var minutes = 60;
 var seconds = 0;
-var nodeList = ["BOMB", "VALVE", "FLOOR", "RFID", "KEY", "PBX", "P2K", "MAP", "WC", "SNAKE"];
+var nodeList = ["BOMB", "VALVE", "FLOOR", "RFID", "KEY", "PBX_Task1", "PBX_Task2", "P2K", "MAP", "WC", "SNAKE"];
+var gameActive = false;
 
 function getTimeString(minutes, seconds)
 {
     return ("00" + minutes).slice(-2) + ":" + ("00" + seconds).slice(-2)
+}
+
+function setTime() {
+    var min = $('#setminutes').val();
+    var sec = $('#setseconds').val();
+    $.getJSON('/_time', { "minutes": min, "seconds": sec });
 }
 
 function request(method, params, onSuccess) {
@@ -47,14 +54,16 @@ function updateNode(name, data) {
 }
 
 function tickSecond() {
-    if (seconds == 0) {
-        if (minutes > 0) {
-            minutes -= 1;
+    if (gameActive) {
+        if (seconds == 0) {
+            if (minutes > 0) {
+                minutes -= 1;
+            }
+            seconds = 59;
         }
-        seconds = 59;
-    }
-    else {
-        seconds -= 1;
+        else {
+            seconds -= 1;
+        }
     }
     $("#timeLeft").text(getTimeString(minutes, seconds));
 }
@@ -74,21 +83,55 @@ function syncTime() {
 function refreshStatus() {
     var response = request('/_status', {}, function(response) {
         if (undefined != response.status) {
-            $("#status").text(response.status);        
+            //$("#status").text(response.status);        
+            gameActive = response.status == "active";
+
             var showPause = (response.status == "pause");
             var showPlay = (response.status == "active");
             var showService = (response.status == "service");
 
-            if (showPause) $("#statusPause").show();
+            if (showPause) {
+                $("#statusPause").show();
+                $("#status").text("PAUZE");
+                //$(".btnPause").addClass("active");
+                $(".btnStart").addClass("disabled");
+            }
             else $("#statusPause").hide();
 
-            if (showPlay) $("#statusPlay").show();
+            if (showPlay) {
+                $("#statusPlay").show();
+                $("#status").text("AKTĪVA");
+                //$(".btnPause").removeClass("active");
+                $(".btnStart").addClass("active");
+                $(".btnStart").addClass("disabled");
+                //$(".btnPause").addClass("disabled");
+            }
             else $("#statusPlay").hide();
 
-            if (showService) $("#statusService").show();
+            if (showService) {
+                $("#statusService").show();
+                $("#status").text("APKOPE");
+                //$(".btnPause").removeClass("disabled");
+                //$(".btnPause").removeClass("active");
+                $(".btnStart").removeClass("active");
+                $(".btnStart").removeClass("disabled");
+            }
             else $("#statusService").hide();
         }
-    
+
+        if (undefined != response.gameEnabled) {
+            if (response.gameEnabled) {
+                $("#enableText").text("aktīvs");                    
+                $("#enableOn").show();
+                $("#enablePause").hide();
+            }
+            else {
+                $("#enableText").text("pauze");                    
+                $("#enableOn").hide();
+                $("#enablePause").show();
+            }
+        }
+
         if (undefined != response.doorsOpen) {
             if (response.doorsOpen) {
                 $("#doorState").text("ATVĒRTAS");                    
@@ -160,14 +203,15 @@ $(document).ready(function(){
         })('#' + name + ' .btnReset', '#' + name + ' .btnFinish', name);
     }
     
-    $('.btnStart').bind('click', startGame);
-    $('.btnPause').bind('click', pauseGame);
+    $('.btnStart').bind('click', pauseGame);
+    //$('.btnPause').bind('click', pauseGame);
     $('.btnService').bind('click', enterMaintenance);
-        
+    $('#btnSetTime').bind('click', setTime);
+
     syncTime();
     refreshStatus();
     
-    setInterval( refreshStatus, 2000 );
+    setInterval( refreshStatus, 1000 );
     setInterval( syncTime, 15000 );
     setInterval( tickSecond, 1000 );
 });

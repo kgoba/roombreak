@@ -264,14 +264,37 @@ class Map(NodeBase):
     def update(self):
         self.getDone()
   
-class PBX(NodeBase):
+class PBX_Task1(NodeBase):
+    CMD_DONE1 = 16
 
     def __init__(self, bus):
         NodeBase.__init__(self, bus, "PBX")
-        self.sensorDone = None
 
     def update(self):
         self.getDone()
+
+    def getDone(self, newValue = None):
+        params = self.tryCommand(self.CMD_DONE1, self.encodeBool(newValue))
+        if params:
+            self.done = self.decodeBool(params)
+            return self.done
+        return None
+
+class PBX_Task2(NodeBase):
+    CMD_DONE2 = 17
+
+    def __init__(self, bus):
+        NodeBase.__init__(self, bus, "PBX")
+
+    def update(self):
+        self.getDone()
+
+    def getDone(self, newValue = None):
+        params = self.tryCommand(self.CMD_DONE2, self.encodeBool(newValue))
+        if params:
+            self.done = self.decodeBool(params)
+            return self.done
+        return None
 
 class P2K(NodeBase):
 
@@ -368,3 +391,9 @@ class Player(NodeBase):
     
     def setTrack3(self, track):
         return self.setByte(self.CMD_TRACK3, track)
+
+    def triggerTrack2(self, track):
+        ret = self.setByte(self.CMD_TRACK2, track)
+        self.setByte(self.CMD_TRACK2, 0)
+        return ret
+

@@ -23,14 +23,59 @@ import rs485
 from bus import Bus
 import node
 
+class Snake:
+    PIN_SNAKE_EN = 2
+    PIN_EASTER_EN = 3
+    PIN_SNAKE_DONE = 25
+
+    def __init__(self):
+        self.snakeOnPin = DigitalOutputDevice(self.PIN_SNAKE_EN, active_high = False)
+        self.snakeDonePin = DigitalInputDevice(self.PIN_SNAKE_DONE, pull_up = False)
+        self.snakeDonePin.when_activated = self.onDone
+        self.done = False
+        self.enabled = False
+        return
+
+    def onDone(self):
+        self.done = True
+
+    def isAlive(self):
+        return True
+
+    def getDone(self, newValue = None):
+        if (newValue != None):
+            self.done = newValue
+        
+        if self.snakeDonePin.is_active:
+            self.done = True
+
+        return self.done
+
+    def getEnabled(self, newValue = None):
+        if (newValue != None):
+            self.enabled = newValue
+        
+        if self.enabled and not self.done:
+            self.snakeOnPin.on()
+        else: 
+            self.snakeOnPin.off()
+        
+        return self.enabled
+
+    def update(self):
+        self.getDone()
+        return
+
+    def getAllValues(self):    
+        values = {}
+        values['done'] = self.done
+        values['alive'] = self.isAlive()
+        return values
+
 class RPi:
   PIN_NODE_RST = 27
   PIN_START_BTN = 23
   PIN_EXIT_EN = 24
-
-  PIN_SNAKE_EN = 2
-  PIN_EASTER_EN = 3
-  PIN_SNAKE_DONE = 25
 
   def __init__(self, onStart = None, onStop = None):
     if not RPI_OK: return
@@ -38,7 +83,6 @@ class RPi:
     #self.btnPin = DigitalInputDevice(self.PIN_START_BTN)
     self.btnPin = Button(self.PIN_START_BTN)
     self.outPin = DigitalOutputDevice(self.PIN_EXIT_EN, active_high = False)
-    self.snakeOnPin = DigitalOutputDevice(self.PIN_SNAKE_EN, active_high = False)
     #self.outPin.source = self.btnPin.values
     if onStart: self.btnPin.when_pressed = onStart
     if onStop: self.btnPin.when_released = onStop
@@ -49,17 +93,11 @@ class RPi:
     self.rstPin.blink(n = 1, on_time = 0.1, off_time = 0.1, background = True)
     return
 
-  def setSnake(self, on):
-    if not RPI_OK: return
-    if on: self.snakeOnPin.on()
-    else: self.snakeOnPin.off()
-    return
-
   def setDoors(self, on):
     if not RPI_OK: return
     if on: self.outPin.on()
     else: self.outPin.off()
-    return 
+    return
 
   def gameEnabled(self):
     return self.btnPin.is_active
@@ -68,24 +106,28 @@ class RPi:
 class Master:
     def __init__(self, bus, script = None):
         self.bus = bus
-        self.rpi = RPi()
-        #self.rpi = RPi(self.onGameStart, self.onGamePause)
+        #self.rpi = RPi()
+        self.rpi = RPi(self.onGameStart, self.onGamePause)
 
         try:
             self.bomb = node.Bomb(bus)
             self.player = node.Player(bus)
             self.dimmer = node.Dimmer(bus)
+            self.snake = Snake()
             self.nodeMap = {
                 'BOMB'  : self.bomb, 
                 'VALVE' : node.Valve(bus),
                 'FLOOR' : node.Floor(bus),
                 'RFID'  : node.RFID(bus),
                 'KEY'   : node.Key(bus),
-                'PBX'   : node.PBX(bus),
+                'PBX_Task1'   : node.PBX_Task1(bus),
+                'PBX_Task2'   : node.PBX_Task2(bus),
                 'P2K'   : node.P2K(bus),
                 'MAP'   : node.Map(bus),
-                'WC'    : node.WC(bus)
+                'WC'    : node.WC(bus),
+                'SNAKE' : self.snake
             }
+
         except Exception as e:
             logging.warning("Failed to instantiate node objects (%s)" % str(e))
 
@@ -101,7 +143,7 @@ class Master:
             logging.warning("Exception while reading script (%s)" % str(e))
 
         self.gameState = 'service'
-        self.setGameState('service')
+        #self.setGameState('service')
 
     def setDone(self, address, isDone):
         if address in self.nodeMap:
@@ -112,9 +154,15 @@ class Master:
             
             self.nodeMap[address].getDone(isDone)
 
+    def setTime(self, minutes, seconds):
+        logging.info("Setting time to %02d:%02d" % (minutes, seconds) )
+        self.bomb.setTime( minutes, seconds )
+    
+
     def getStatus(self):
         response = {}
         response['status'] = self.gameState
+        response['gameEnabled'] = self.rpi.gameEnabled()
         response['doorsOpen'] = False
         for name in self.nodeMap:
             values = self.nodeMap[name].getAllValues()
@@ -124,11 +172,24 @@ class Master:
     def getTime(self):
         return 60 - (self.minutes + self.seconds / 60.0)
 
+    def onGameStart(self):
+        self.setGameState("active")
+
+    def onGamePause(self):
+        #self.setGameState("pause")
+        pass
+
     def setGameState(self, newState):
-        logging.info("Entering game state \"%s\"" % newState)
         if newState == 'service':
+            self.rpi.setDoors(True)
+ 
             self.rpi.resetNetwork()
             time.sleep(3.5)
+
+            self.snake.getDone(False)
+            self.minutes = 60
+            self.seconds = 0
+            self.setTime(self.minutes, self.seconds)
             #self.player.setTrack1(0)
             #self.player.setTrack2(0)
             #self.player.setTrack3(0)
@@ -137,24 +198,34 @@ class Master:
             #self.dimmer.setDimmer1(100)
             #self.dimmer.setDimmer2(100)
         elif newState == 'active':
-            self.minutes = 60
-            self.seconds = 0
-            self.bomb.setTime(self.minutes, self.seconds)
-            #self.bomb.setEnabled(True)
-            self.dimmer.setDimmer1(40)
-            self.dimmer.setDimmer2(25)  
-            self.dimmer.setDimmer3(0)
-            self.dimmer.setDimmer4(0)
+            if self.gameState != 'pause':
+                return
+            self.dimmer.setDimmer1(self.lastDimmer1)
+            self.dimmer.setDimmer2(self.lastDimmer2)
+            self.bomb.setEnabled(True)
+            pass
         elif newState == 'pause':
-            self.bomb.setEnabled(False)
-            self.dimmer.setDimmer1(100)
-            self.dimmer.setDimmer2(100)
+            if self.gameState == 'active' or self.rpi.gameEnabled():
+                return
+                self.lastDimmer1 = self.dimmer.getDimmer1()
+                self.lastDimmer2 = self.dimmer.getDimmer2()
+                self.bomb.setEnabled(False)
+                self.dimmer.setDimmer1(100)
+                self.dimmer.setDimmer2(100)
+            else:
+                self.lastDimmer1 = self.dimmer.setDimmer1(40)
+                self.lastDimmer2 = self.dimmer.setDimmer2(25)
+                self.dimmer.setDimmer3(0)
+                self.dimmer.setDimmer4(0)
+            pass
+ 
+        logging.info("Entering game state \"%s\"" % newState)
         self.gameState = newState
         
     def ledsOn(self):
-        self.dimmer.setDimmer4(10)
+        self.dimmer.setDimmer4(30)
         self.dimmer.setDimmer1(25)
-        self.dimmer.setDimmer2(50)
+        self.dimmer.setDimmer2(40)
     
     def ledsOff(self):
         self.dimmer.setDimmer4(0)
@@ -164,7 +235,7 @@ class Master:
     def timeSyncer(self):
         logging.info("Status/time updater thread started")
         ledState = [False] * 10
-        ledList = ['VALVE', 'FLOOR', 'RFID', 'KEY', 'MAP', 'P2K', 'WC']
+        ledList = ['VALVE', 'FLOOR', 'RFID', 'KEY', 'MAP', 'P2K', 'WC', 'PBX_Task1', 'PBX_Task2', 'SNAKE']
         while True:
             logging.debug("Updating nodes")
             for name in self.nodeMap:
@@ -175,9 +246,17 @@ class Master:
             
             try:
                 idx = 0
+                isNew = False
                 for name in ledList:
+                    if ledState[idx] == False and self.nodeMap[name].done == True:
+                        # new puzzle has been solved
+                        isNew = True
+
                     ledState[idx] = self.nodeMap[name].done
                     idx += 1
+
+                if isNew:
+                    self.player.triggerTrack2(4)
                 self.bomb.setLeds(ledState)
             except Exception as e:
                 logging.warning("Failed to update Bomb LED state (%s)" % str(e))
@@ -193,7 +272,7 @@ class Master:
             except Exception as e:
                 logging.warning("Failed to get time (%s)" % str(e))
             
-            time.sleep(10)
+            time.sleep(3)
         return
 
     def timeTicker(self):
@@ -216,15 +295,16 @@ class Master:
         actions = {
             'Station'   : lambda: self.player.setTrack1(1),
             'Train'     : lambda: self.player.setTrack1(2),
-            'Tick'      : lambda: self.player.setTrack1(3),
-            'Explode'   : lambda: self.player.setTrack1(5),
+            'Tick'      : lambda: self.player.setTrack1(5),
+            'Explode'   : lambda: self.player.setTrack1(3),
             'Laugh'     : lambda: self.player.setTrack2(2),
             'Announce'  : lambda: self.player.setTrack2(1),
             'Radio'     : lambda: self.player.setTrack3(1),
-            'SnakeOn'   : lambda: self.rpi.setSnake(True),
-            'SnakeOff'  : lambda: self.rpi.setSnake(False),
+            'SnakeOn'   : lambda: self.snake.getEnabled(True),
+            'SnakeOff'  : lambda: self.snake.getEnabled(False),
             'LedsOn'    : lambda: self.ledsOn(),
-            'LedsOff'   : lambda: self.ledsOff()
+            'LedsOff'   : lambda: self.ledsOff(),
+            'Finish'    : lambda: self.player.setTrack2(6)
             #'StartGame' : lambda: self.setGameState('play')
         }
         
@@ -253,25 +333,9 @@ class Master:
                 continue
 
             if self.gameState == 'pause':
-            #or (self.gameState == 'active' and not self.rpi.gameEnabled()):
                 time.sleep(1)
                 continue
 
-            if not self.rpi.gameEnabled():
-                if self.bomb.enabled:
-                    self.bomb.setEnabled(False)
-                    lastDimmer1 = self.dimmer.getDimmer1()
-                    lastDimmer2 = self.dimmer.getDimmer2()
-                    self.dimmer.setDimmer1(100)
-                    self.dimmer.setDimmer2(100)
-                time.sleep(1)
-                continue
-            else:
-                if not self.bomb.enabled:
-                    self.bomb.setEnabled(True)
-                    if lastDimmer1: self.dimmer.setDimmer1(lastDimmer1)
-                    if lastDimmer2: self.dimmer.setDimmer2(lastDimmer2)
- 
             if idx >= len(timeKeys): 
                 logging.info("Script execution complete")
                 time.sleep(60)
@@ -313,7 +377,7 @@ class Master:
         #    self.restartAll()
         #except Exception as e:
         #    logging.warning("Failed to initialize nodes (%s)" % str(e))
-        
+
         t1 = threading.Thread(target=self.timeTicker)
         t2 = threading.Thread(target=self.timeSyncer)
         t3 = threading.Thread(target=self.scriptThread)
