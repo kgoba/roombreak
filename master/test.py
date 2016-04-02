@@ -50,11 +50,14 @@ def main(args):
   if args.reset:
     rpi.resetNetwork()
 
-  for cmd in args.command:
+  while True:
+    for cmd in args.command:
     if cmd == 'reset':
       rpi.resetNetwork()
-    if cmd == 'pause':
+    if cmd == 'wait':
       pause()
+    if cmd == 'pause':
+      time.sleep(1)
     if cmd == 'open':
       rpi.setDoors(True)
     if cmd == 'close':
@@ -66,6 +69,11 @@ def main(args):
       while True:
         ser.write([0xAA])
         time.sleep(0.020)
+    
+    if not args.loop:
+      break
+
+  return
 
 
 if __name__ == "__main__":
@@ -76,6 +84,7 @@ if __name__ == "__main__":
   parser.add_argument('-n', '--node', help = 'Node identifier')
   parser.add_argument('-R', '--reset', help = 'Reboot', action = 'store_true', default = False)
   parser.add_argument('-d', '--debug', help = 'Debug', action = 'store_true', default = False)
+  parser.add_argument('-l', '--loop', help = 'Loop', action = 'store_true', default = False)
   parser.add_argument('command', nargs='+')
 
   args = parser.parse_args(sys.argv[1:])
