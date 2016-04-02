@@ -31,10 +31,10 @@ PLineConfig config2 = {
 };
 PLine line2(player1, config2);
 
-PUser user1(line1);
+//PUser user1(line1);
 //PUser user2(line2);
 //VUser user3(NUMBER_FINISH);
-//Operator oper(user1, user2, user3);
+Operator oper(line1, line2);
 
 bool gSolved1;
 bool gSolved2;
@@ -107,34 +107,16 @@ void loop()
 {
   static byte id = 0;
     
-  _delay_ms(1);
-
-  //serial.println("Tick");
+  //_delay_ms(50);
   
-  /*
-  static word avg = 0;
-  
-  char buf[32];
-  word aval = analogRead(config1.apinSense);
-  avg += aval - (avg >> 6);
-  
-  sprintf(buf, "%d %d (%d)", aval, avg >> 6, avg);
-  serial.println(buf);
-  */
-  
-  line2.update();
-  if (line2.getState() == PLine::CLOSED) {
-    pinWrite(PIN_TALK, HIGH);
-  }
-  else {
-    pinWrite(PIN_TALK, LOW);
-  }
+  if (oper.getLastDialled() == 4) gSolved1 = true;
+  if (oper.getLastDialled() == 5) gSolved2 = true;
   
   taskLoop();
 }
 
 ISR(TIMER0_OVF_vect) {
-  user1.tick();
+  oper.tick();
 }
 
 extern "C" void __cxa_pure_virtual() { while (1); }
