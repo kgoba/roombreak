@@ -6,6 +6,11 @@
 
 const char  * PUser::_numbers[] = { NUMBER_ADMIN, NUMBER_01, NUMBER_02, NUMBER_03, NUMBER_SOLVE1, NUMBER_SOLVE2 };
 
+PUser::PUser(PLine &line) : _state(IDLE), _line(line) {
+  _lastLineState = _line.getState();
+  _dialled = 0xFF;
+}
+
 void PUser::setState(State state)
 {
   switch (state) {
@@ -170,6 +175,12 @@ void PUser::onTimer(int type)
     }
   }
 }
+
+byte PUser::getLastDialled()
+{
+  return _dialled;
+}
+
 
 void PUser::startTimer(int type, int timeout)
 {

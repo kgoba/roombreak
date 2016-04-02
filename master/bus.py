@@ -221,7 +221,7 @@ def main(args):
   logging.basicConfig(level = level)
   logging.debug(args)
 
-  ser = rs485.RS485(args.port, args.baudrate, timeout = 0.5, writeTimeout = 0.24)
+  ser = rs485.RS485(args.port, args.baudrate, timeout = 0.2, writeTimeout = 0.24)
   crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)
   bus = Bus(ser, crc)
 
