@@ -178,7 +178,8 @@ class Master:
         self.setGameState("active")
 
     def onGamePause(self):
-        self.setGameState("pause")
+        if self.gameState != "service":
+            self.setGameState("pause")
         pass
 
     def setGameState(self, newState):
@@ -210,8 +211,7 @@ class Master:
             self.bomb.setEnabled(True)
             pass
         elif newState == 'pause':
-            if self.gameState == 'active' or self.rpi.gameEnabled():
-                return
+            if self.gameState == 'active':
                 self.lastDimmer1 = self.dimmer.getDimmer1()
                 self.lastDimmer2 = self.dimmer.getDimmer2()
                 self.bomb.setEnabled(False)

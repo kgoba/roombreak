@@ -114,7 +114,12 @@ function refreshStatus() {
                 //$(".btnPause").removeClass("disabled");
                 //$(".btnPause").removeClass("active");
                 $(".btnStart").removeClass("active");
-                $(".btnStart").removeClass("disabled");
+                if (undefined != response.gameEnabled && !response.gameEnabled) {
+                    $(".btnStart").removeClass("disabled");
+                }
+                else {
+                    $(".btnStart").addClass("disabled");
+                }
             }
             else $("#statusService").hide();
         }
