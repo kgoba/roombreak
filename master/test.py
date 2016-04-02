@@ -24,7 +24,7 @@ class RPi:
     self.btnPin = DigitalInputDevice(self.PIN_START_BTN)
     self.outPin = DigitalOutputDevice(self.PIN_EXIT_EN, active_high = False)
     self.snakeOnPin = DigitalOutputDevice(self.PIN_SNAKE_EN, active_high = False)
-    self.outPin.source = self.btnPin.values
+    #self.outPin.source = self.btnPin.values
     return
 
   def resetNetwork(self):
@@ -52,26 +52,30 @@ def main(args):
 
   while True:
     for cmd in args.command:
-    if cmd == 'reset':
-      rpi.resetNetwork()
-    if cmd == 'wait':
-      pause()
-    if cmd == 'pause':
-      time.sleep(1)
-    if cmd == 'open':
-      rpi.setDoors(True)
-    if cmd == 'close':
-      rpi.setDoors(False)
-    if cmd == 'snake':
-      rpi.setSnake(True)
-    if cmd == 'uart':
-      ser = rs485.RS485(args.port, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
-      while True:
-        ser.write([0xAA])
-        time.sleep(0.020)
-    
+        if cmd == 'reset':
+          rpi.resetNetwork()
+        if cmd == 'wait':
+          pause()
+        if cmd == 'pause':
+          time.sleep(1)
+        if cmd == 'open':
+          print "opening door"
+          rpi.setDoors(True)
+        if cmd == 'close':
+          print "closing door"
+          rpi.setDoors(False)
+        if cmd == 'snake':
+          rpi.setSnake(True)
+        if cmd == 'uart':
+          ser = rs485.RS485(args.port, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
+          while True:
+            ser.write([0xAA])
+            time.sleep(0.020)
+        time.sleep(1)
+        
     if not args.loop:
       break
+
 
   return
 
