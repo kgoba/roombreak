@@ -93,13 +93,14 @@ class RPi:
     self.rstPin.blink(n = 1, on_time = 0.1, off_time = 0.1, background = True)
     return
 
-  def setDoors(self, on):
+  def openDoors(self, on):
     if not RPI_OK: return
     if on: self.outPin.on()
     else: self.outPin.off()
     return
 
   def gameEnabled(self):
+    if not RPI_OK: return False
     return self.btnPin.is_active
 
 
@@ -143,6 +144,7 @@ class Master:
             logging.warning("Exception while reading script (%s)" % str(e))
 
         self.gameState = 'service'
+        self.rpi.openDoors(False)
         #self.setGameState('service')
 
     def setDone(self, address, isDone):
@@ -176,20 +178,23 @@ class Master:
         self.setGameState("active")
 
     def onGamePause(self):
-        #self.setGameState("pause")
+        self.setGameState("pause")
         pass
 
     def setGameState(self, newState):
         if newState == 'service':
-            self.rpi.setDoors(True)
  
             self.rpi.resetNetwork()
             time.sleep(3.5)
 
+            self.rpi.openDoors(False)
+            
             self.snake.getDone(False)
+            
             self.minutes = 60
             self.seconds = 0
             self.setTime(self.minutes, self.seconds)
+            
             #self.player.setTrack1(0)
             #self.player.setTrack2(0)
             #self.player.setTrack3(0)
@@ -218,7 +223,15 @@ class Master:
                 self.dimmer.setDimmer3(0)
                 self.dimmer.setDimmer4(0)
             pass
- 
+        elif newState == 'complete':
+            if self.gameState == 'complete': 
+                return
+            self.rpi.openDoors(True)
+            self.dimmer.setDimmer1(100)
+            self.dimmer.setDimmer2(100)
+            self.player.setTrack2(6)
+
+
         logging.info("Entering game state \"%s\"" % newState)
         self.gameState = newState
         
@@ -247,16 +260,22 @@ class Master:
             try:
                 idx = 0
                 isNew = False
+                isComplete = True
                 for name in ledList:
                     if ledState[idx] == False and self.nodeMap[name].done == True:
                         # new puzzle has been solved
                         isNew = True
 
                     ledState[idx] = self.nodeMap[name].done
+                    if not ledState[idx]: isComplete = False
                     idx += 1
+
+                if isComplete:
+                    self.setGameState("complete")
 
                 if isNew:
                     self.player.triggerTrack2(4)
+ 
                 self.bomb.setLeds(ledState)
             except Exception as e:
                 logging.warning("Failed to update Bomb LED state (%s)" % str(e))
@@ -289,6 +308,11 @@ class Master:
             time.sleep(1)
         return
  
+    def darkness(self):
+        self.dimmer.setDimmer1(0)
+        self.dimmer.setDimmer2(0)
+        self.dimmer.setDimmer4(0)
+
     def scriptThread(self):
         logging.info("Scheduler thread started")
         
@@ -296,6 +320,7 @@ class Master:
             'Station'   : lambda: self.player.setTrack1(1),
             'Train'     : lambda: self.player.setTrack1(2),
             'Tick'      : lambda: self.player.setTrack1(5),
+            'Darkness'  : lambda: self.darkness(),
             'Explode'   : lambda: self.player.setTrack1(3),
             'Laugh'     : lambda: self.player.setTrack2(2),
             'Announce'  : lambda: self.player.setTrack2(1),
@@ -304,7 +329,6 @@ class Master:
             'SnakeOff'  : lambda: self.snake.getEnabled(False),
             'LedsOn'    : lambda: self.ledsOn(),
             'LedsOff'   : lambda: self.ledsOff(),
-            'Finish'    : lambda: self.player.setTrack2(6)
             #'StartGame' : lambda: self.setGameState('play')
         }
         
@@ -332,7 +356,7 @@ class Master:
                 time.sleep(1)
                 continue
 
-            if self.gameState == 'pause':
+            if self.gameState != 'active':
                 time.sleep(1)
                 continue
 
@@ -340,6 +364,7 @@ class Master:
                 logging.info("Script execution complete")
                 time.sleep(60)
                 continue
+            
             timeElapsed = self.getTime()
             if timeKeys[idx] <= timeElapsed:                
                 for action in timeMap[timeKeys[idx]]:
@@ -401,11 +426,14 @@ class Master:
         return
 
 def readConfig(values):
-    home = os.path.expanduser("~")    
+    #home = os.path.expanduser("~")   
+    configPath = '/etc/roombreak.config'
     try:
-        file = open(os.path.join(home, '.roombreak'), 'r')
+        #file = open(os.path.join(configDir, 'roombreak.config'), 'r')
+        file = open(configPath, 'r')
     except:
         file = None
+
     if not file:
         return values
     
@@ -424,7 +452,15 @@ def main(args):
     level = logging.DEBUG
   else:
     level = logging.INFO
-  logging.basicConfig(level = level)
+
+  logstream = sys.stderr
+  try:
+    if args.logMain:
+      logstream = open(args.logMain, 'w')
+  except:
+    pass
+
+  logging.basicConfig(level = level, stream = logstream)
   logging.debug(args)
 
   ser = rs485.RS485(args.port, args.baudrate, timeout = 0.2, writeTimeout = 0.2)
