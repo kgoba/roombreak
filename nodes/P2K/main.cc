@@ -102,23 +102,7 @@ void loop() {
 			ok2 = false;
 		}
 	}
-
-	if (!gSolved1 && ok1) {
-		for (byte idx = 0; idx < 5; idx++)
-			panel.setLED(idx, true);
-	}
-	if (!gSolved2 && ok2) {
-		for (byte idx = 0; idx < 5; idx++)
-			panel.setLED(idx + 5, true);
-	}
-	if (gSolved1 && !ok1) {
-		for (byte idx = 0; idx < 5; idx++)
-			panel.setLED(idx, false);
-	}
-	if (gSolved2 && !ok2) {
-		for (byte idx = 0; idx < 5; idx++)
-			panel.setLED(idx + 5, false);
-	}
+  
 	if (ok1 && ok2 && (!gSolved1 || !gSolved2)) {
 		led = 0;
 		phase = true;
@@ -126,15 +110,33 @@ void loop() {
 	}
 	gSolved1 = ok1;
 	gSolved2 = ok2;
-	gSolvedAll = gSolved1 && gSolved2;
+  //if (gSolved1 && gSolved2) gSolvedAll = true;
 
-	if (taskIsDone()) {
+	if (gSolved1 && gSolved2) {
 		panel.setLED(led, phase);
 		if (++led >= 10) {
 			led = 0;
 			phase = !phase;
 		}
 	}
+  else {
+  	if (gSolved1) {
+  		for (byte idx = 0; idx < 5; idx++)
+  			panel.setLED(idx, true);
+  	}
+    else {
+  		for (byte idx = 0; idx < 5; idx++)
+  			panel.setLED(idx, false);
+    }
+  	if (gSolved2) {
+  		for (byte idx = 0; idx < 5; idx++)
+  			panel.setLED(idx + 5, true);
+  	}
+    else {
+  		for (byte idx = 0; idx < 5; idx++)
+  			panel.setLED(idx + 5, false);
+  	}    
+  }
 
 	taskLoop();
 }
