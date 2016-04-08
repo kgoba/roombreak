@@ -16,6 +16,7 @@ void PUser::setState(State state)
   switch (state) {
     case IDLE:
     {      
+      _line.setRing(false);
       //Serial::println("State -> IDLE");
       stopTimer(TIMER_CALL);
       stopTimer(TIMER_DIALSTART);
@@ -48,8 +49,23 @@ void PUser::setState(State state)
     case CALL:
     {
       //Serial::println("State -> CALL");
-      startTimer(TIMER_CALL, 2000);
+      startTimer(TIMER_CALL, 3000);
       _line.setTone(PLine::TONE_CALL);
+      break;
+    }
+    case RING:
+    {
+      _line.setRing(true);
+      startTimer(TIMER_RING, 1000);
+      break;
+    }
+    case RING_WAIT:
+    {
+      _line.setRing(false);
+      break;
+    }
+    case TALK:
+    {
       break;
     }
     default:
@@ -77,6 +93,11 @@ void PUser::onLineClosed()
       startTimer(TIMER_INTERDIGIT, 200); 
       break;
     }
+    case RING_WAIT:
+    {
+      setState(TALK);
+      break;
+    }
   }
 }
 
@@ -97,6 +118,12 @@ void PUser::onLineOpen()
     }
     case DIAL:
     {
+      break;
+    }
+    case RING:
+    case TALK:
+    {
+      setState(IDLE);
       break;
     }
   }
@@ -173,12 +200,27 @@ void PUser::onTimer(int type)
       }
       break;
     }
+    case TIMER_RING:
+    {
+      setState(RING_WAIT);
+      break;
+    }
   }
 }
 
 byte PUser::getLastDialled()
 {
   return _dialled;
+}
+
+void PUser::onRing(bool isRinging) {
+  if (isRinging && _state == IDLE) {
+    setState(RING);
+  }
+  else if (!isRinging) {
+    if (_state == TALK) setState(BUSY);
+    else setState(IDLE);
+  }
 }
 
 
