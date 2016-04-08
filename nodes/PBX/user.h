@@ -22,7 +22,7 @@ class PUser : public User {
 public:
   enum State {
     IDLE, OFFHOOK, DIAL, 
-    CALL, TALK, BUSY, RING
+    CALL, TALK, BUSY, RING, RING_WAIT
   };
 
   PUser(PLine &line);
@@ -32,7 +32,7 @@ public:
   void onLineOpen();
   void onLineClosed();
   void onTimer(int type);
-  void onRing();
+  void onRing(bool isRinging);
 
   void tick();
 
@@ -42,6 +42,7 @@ private:
   enum { 
     TIMER_PICKUP, TIMER_DIALSTART, TIMER_HANGUP, 
     TIMER_BREAK, TIMER_INTERDIGIT, TIMER_CALL,
+    TIMER_RING,
     N_TIMERS 
   };
 
@@ -98,11 +99,12 @@ public:
     _user1.tick();
     _line2.update();
 
-    if (_user1.getLastDialled() == 0 && (counter == 0)) {
-      counter = 1000;
-      _line2.setRing(true);
+    if (_user1.getLastDialled() == 0) {
+      //counter = 1000;
+      //_line2.setRing(true);
     }
 
+    /*
     if (counter > 0) {
       if (counter == 2)
         _line2.setRing(false);
@@ -110,14 +112,34 @@ public:
       if (counter > 1)
         counter--;
     }
+    */
+
+    bool talk = false;
+    bool call1 = false;
+    bool call2 = false;
     
-    if (_line2.getState() == PLine::CLOSED) {
-      if (counter == 1) pinWrite(PIN_TALK, HIGH);
+    static PLine::State lastState;
+    
+    PLine::State newState = _line2.getState();
+    
+    if (lastState == PLine::OPEN && newState == PLine::CLOSED) {
+      _user1.onRing(true);
     }
-    else {
-      pinWrite(PIN_TALK, LOW);
-      counter = 0;
+    else if (lastState == PLine::CLOSED && newState == PLine::OPEN) {
+      _user1.onRing(false);
     }
+    lastState = newState;
+    
+
+    if (_line1.getState() == PLine::CLOSED && newState == PLine::CLOSED) {
+      talk = true;
+    }
+
+    if (talk) pinWrite(PIN_TALK, HIGH);
+    else pinWrite(PIN_TALK, LOW);
+    
+    //_line1.setRing(call1);
+    //_line2.setRing(call2);
   }
 
   byte getLastDialled() {

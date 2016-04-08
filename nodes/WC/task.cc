@@ -87,14 +87,14 @@ byte taskIsDone() {
 void taskRestart() {
   gTaskDone = false;
   //bit_clear(gFlags, FLAG_DONE);
-  fanOff();
   dimUV.off();
+  fanOff();
+  player1.stop();
 }
 
 void taskComplete() {
   // task is complete
-  dimLight.off();
-  dimUV.on();
+  bit_set(gFlags, FLAG_DONE);
   player1.stop();
   fanOff();
   gTaskDone = true;  
@@ -177,9 +177,8 @@ void setup() {
 
 void loop() {
   // DO SOMETHING
-  if (bit_check(gFlags, FLAG_TIMEOUT)) {
-    bit_clear(gFlags, FLAG_TIMEOUT);
-  }
+  
+  static bool wasDone = false;
 
   if (taskIsEnabled()) {  
     /*
@@ -198,7 +197,8 @@ void loop() {
     if (b3) gButtonState |= 4;
     if (b4) gButtonState |= 8;
 
-    dimLight.set(b2 && !(b1 && b3 && b4));
+    dimLight.set(b2 && !(bit_check(gFlags, FLAG_TIMEOUT)));
+
     if (b3) fanRampUp(2);
     else fanRampDown(4);
   
@@ -208,30 +208,37 @@ void loop() {
       //player1.stop();
     }
     else player1.stop();
-
-    dimUV.set(b1 && b2 && b3 && b4);
   
     if (b1 && b2 && b3 && b4) {
-      if (!taskIsDone())
+      if (!wasDone) {
         taskComplete();
+        wasDone = true;
+      }
     }
+    else wasDone = false;
     //else pinWrite(PIN_FAN, LOW); //fan.off();
   }
     
   taskLoop();
 }
 
-ISR(TIMER2_OVF_vect) {
-  static byte fan_on;
-  
-  gMillis += (1000UL / TICK_FREQ);
-  //gMillis += 8;
-  if (gMillis >= 100) {
-    gMillis -= 100;
+ISR(TIMER2_OVF_vect) {  
+  if (bit_check(gFlags, FLAG_DONE)) {
+    bit_clear(gFlags, FLAG_DONE);
+    dimLight.off();
+    dimUV.on();
     bit_set(gFlags, FLAG_TIMEOUT);
-    
-    //fan_on = !fan_on;
-    //pinWrite(PIN_FAN, (PinState)fan_on);
+    gMillis = 30000;
+  }
+  
+  if (bit_check(gFlags, FLAG_TIMEOUT)) {
+    if (gMillis < (1000UL / TICK_FREQ)) {
+      bit_clear(gFlags, FLAG_TIMEOUT);
+      dimUV.off();
+    }
+    else {
+      gMillis -= (1000UL / TICK_FREQ);      
+    }
   }
   /*
   btn1.update();
