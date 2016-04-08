@@ -228,7 +228,7 @@ ISR(TIMER2_OVF_vect) {
     dimLight.off();
     dimUV.on();
     bit_set(gFlags, FLAG_TIMEOUT);
-    gMillis = 15000;
+    gMillis = 30000;
   }
   
   if (bit_check(gFlags, FLAG_TIMEOUT)) {
