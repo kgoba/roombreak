@@ -38,6 +38,7 @@ class Snake:
 
     def onDone(self):
         self.done = True
+        self.snakeOnPin.off()
 
     def isAlive(self):
         return True
@@ -82,7 +83,7 @@ class RPi:
     self.rstPin = DigitalOutputDevice(self.PIN_NODE_RST)
     #self.btnPin = DigitalInputDevice(self.PIN_START_BTN)
     self.btnPin = Button(self.PIN_START_BTN)
-    self.outPin = DigitalOutputDevice(self.PIN_EXIT_EN, active_high = False)
+    self.exitPin = DigitalOutputDevice(self.PIN_EXIT_EN, active_high = True)
     #self.outPin.source = self.btnPin.values
     if onStart: self.btnPin.when_pressed = onStart
     if onStop: self.btnPin.when_released = onStop
@@ -95,8 +96,8 @@ class RPi:
 
   def openDoors(self, on):
     if not RPI_OK: return
-    if on: self.outPin.on()
-    else: self.outPin.off()
+    if on: self.exitPin.on()
+    else: self.exitPin.off()
     return
 
   def gameEnabled(self):
