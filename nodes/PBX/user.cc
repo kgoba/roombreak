@@ -121,6 +121,7 @@ void PUser::onLineOpen()
       break;
     }
     case RING:
+    case RING_WAIT:
     case TALK:
     {
       setState(IDLE);

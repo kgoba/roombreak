@@ -33,10 +33,10 @@ void PLine::setRing(bool ringing) {
 void PLine::update() {
   // read analog value and update the moving average
   word aval = adcRead(_config.apinSense);
-  _senseAvg += aval - (_senseAvg >> 6);
+  _senseAvg += aval - (_senseAvg >> 4);
   
   // calculate 6.10-bit fixed point value
-  word avg = (_senseAvg >> 6);
+  word avg = (_senseAvg >> 4);
   
   if (_state == OPEN && avg > VOLTS_TO_COUNTS(THRESHOLD_CLOSED))
     _state = CLOSED;
