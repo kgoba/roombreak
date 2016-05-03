@@ -100,3 +100,26 @@ word adcRead(byte pin)
   while (bit_check(ADCSRA, ADSC)) {}
   return ADC;
 }
+
+
+static byte a;
+static byte b;
+static byte c;
+static byte x;
+
+void rng_init(byte s1, byte s2, byte s3) //Can also be used to seed the rng with more entropy during use.
+{
+  //XOR new entropy into key state
+  a ^=s1;
+  b ^=s2;
+  c ^=s3;
+}
+
+byte rng_get()
+{
+  x++;               //x is incremented every round and is not affected by any other variable
+  a = (a^c^x);       //note the mix of addition and XOR
+  b = (b+a);         //And the use of very few instructions
+  c = (c+(b>>1)^a);  //the right shift is to ensure that high-order bits from b can affect  
+  return c;          //low order bits of other variables
+}

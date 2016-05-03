@@ -36,6 +36,9 @@ PinState pinRead(byte pin);
 void adcReference();
 word adcRead(byte pin);
 
+void rng_init(byte s1, byte s2, byte s3);
+byte rng_get();
+
 #define PORTX(pin)      ((pin < 8) ? PORTD : (pin < 16) ? PORTB : (pin < 24) ? PORTC : 0)
 #define DDRX(pin)       ((pin < 8) ? DDRD : (pin < 16) ? DDRB : (pin < 24) ? DDRC : 0)
 #define PINX(pin)       ((pin < 8) ? PIND : (pin < 16) ? PINB : (pin < 24) ? PINC : 0)
