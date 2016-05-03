@@ -23,14 +23,16 @@ AudioPlayer player3(ioExpander, 4, 5, 6, 2, 3);
 // internal timing frequency in Hz
 #define TICK_FREQ       125
 
-/*
 enum {
-  FLAG_DONE
+  FLAG_DONE,
+  FLAG_KABOOM
 };
 
-volatile byte gFlags;
+volatile byte gSecondsKaboom;
 volatile word gMillis;
-*/
+volatile byte gFlags;
+
+byte gKaboomTrack;
 byte gTrack1;
 byte gTrack2;
 byte gTrack3;
@@ -77,7 +79,20 @@ byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
       busParams[0] = gTrack3;
       *nResults = 1;
       break;
-    }   
+    }
+    case CMD_KABOOM:
+    {
+      if (nParams > 1) {
+        gKaboomTrack = busParams[1];
+      }
+      else gKaboomTrack = 3;
+      if (nParams > 0) {
+        gSecondsKaboom = busParams[0];
+      }
+      else gSecondsKaboom = 10;
+      bit_set(gFlags, FLAG_KABOOM);        
+      break;
+    }
   }
   return 0;
 }
@@ -104,22 +119,32 @@ void setup() {
 
 void loop() {  
   // DO SOMETHING
-  player1.play(gTrack1);
-  player2.play(gTrack2);
-  player3.play(gTrack3);
+  if (bit_check(gFlags, FLAG_KABOOM)) {
+    player1.play(gKaboomTrack);
+    player2.stop();
+    player3.stop();
+  }
+  else {
+    player1.play(gTrack1);
+    player2.play(gTrack2);
+    player3.play(gTrack3);    
+  }
 
   taskLoop();
 }
 
 ISR(TIMER2_OVF_vect) {
-  /*
-  if (gMillis >= 8) gMillis -= 8;
-  else {
-    bit_set(gFlags, FLAG_TIMEOUT);
+  gMillis += 1000 / TICK_FREQ;
+  if (gMillis >= 1000) {
+    gMillis -= 1000;
+    
+    if (bit_check(gFlags, FLAG_KABOOM)) {
+      if (gSecondsKaboom > 0) {
+        gSecondsKaboom--;
+      }
+      else {
+        bit_clear(gFlags, FLAG_KABOOM);
+      }
+    }
   }
-  
-  if (pinRead(PIN_SWITCH) == LOW) {
-    bit_set(gFlags, FLAG_BUTTON);
-  }
-  */
 }

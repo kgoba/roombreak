@@ -26,11 +26,13 @@ PWMPin<6>       pinDimmer4;     // OC0A
 
 enum {
   FLAG_DONE,
-  FLAG_TIMEOUT
+  FLAG_TIMEOUT,
+  FLAG_KABOOM
 };
 
 volatile byte gFlags;
 volatile word gMillis;
+volatile word gSecondsKaboom;
 volatile word gCounts[3];
 
 
@@ -125,6 +127,18 @@ byte taskCallback(byte cmd, byte nParams, byte *nResults, byte *busParams)
       busParams[0] = gDimmer4Percent;
       break;      
     }
+    
+    case CMD_KABOOM:
+    {
+      if (nParams > 0) {
+        gSecondsKaboom = busParams[0];
+        *nResults = nParams;
+      }
+      else gSecondsKaboom = 10;
+      rng_init(gMillis >> 8, gMillis & 0xFF, 73);
+      bit_set(gFlags, FLAG_KABOOM);        
+      break;
+    }
   }
   return 0;
 }
@@ -174,41 +188,50 @@ void setup() {
   taskSetup(BUS_ADDRESS);
 }
 
-void loop() {
-  static byte dir = 1;
-  static byte phase;
-  
-  // DO SOMETHING
-  if (bit_check(gFlags, FLAG_TIMEOUT)) {
-    bit_clear(gFlags, FLAG_TIMEOUT);
+void loop() 
+{
+  if (bit_check(gFlags, FLAG_KABOOM)) {
   }
-  
-  //pinDimmer3.setPWMPercent(PWM_FREQ, gDimmer3Percent);
-  //pinDimmer4.setPWMPercent(PWM_FREQ, gDimmer4Percent);
+  else {
+    // Normal operation
+    
+    OCR1A = 2500/100 * (100 - gDimmer1Ramp);
+    OCR1B = 2500/100 * (100 - gDimmer2Ramp);
 
-  OCR1A = 2500/100 * (100 - gDimmer1Ramp);
-  OCR1B = 2500/100 * (100 - gDimmer2Ramp);
-
-  OCR0A = gDimmer3Ramp * 255 / 100;
-  OCR0B = gDimmer4Ramp * 255 / 100;
-  
+    OCR0A = gDimmer3Ramp * 255 / 100;
+    OCR0B = gDimmer4Ramp * 255 / 100;    
+  }
+    
   taskLoop();
 }
 
-ISR(TIMER2_OVF_vect) {
+ISR(TIMER2_OVF_vect) {  
   gMillis += (1000UL / TICK_FREQ);
 
   if (gMillis >= 1000) {
     gMillis -= 1000;
     bit_set(gFlags, FLAG_TIMEOUT);    
+    
+    
+    if (bit_check(gFlags, FLAG_KABOOM)) {
+      if (gSecondsKaboom > 0) {
+        gSecondsKaboom--;
+      }
+      else {
+        bit_clear(gFlags, FLAG_KABOOM);
+        gDimmer1Ramp = 0;
+        gDimmer2Ramp = 0;
+        gDimmer1Percent = 100;
+        gDimmer2Percent = 100;
+      }
+    }
   }
   
   static word millis2;
   millis2 += (1000UL / TICK_FREQ);
   if (millis2 >= 64) {
     millis2 -= 64;
-//  static byte phase;
-//  {
+
     if (gDimmer1Ramp > gDimmer1Percent) gDimmer1Ramp--;
     else if (gDimmer1Ramp < gDimmer1Percent) gDimmer1Ramp++;
     if (gDimmer2Ramp > gDimmer2Percent) gDimmer2Ramp--;
@@ -217,26 +240,22 @@ ISR(TIMER2_OVF_vect) {
     else if (gDimmer3Ramp < gDimmer3Percent) gDimmer3Ramp++;
     if (gDimmer4Ramp > gDimmer4Percent) gDimmer4Ramp--;
     else if (gDimmer4Ramp < gDimmer4Percent) gDimmer4Ramp++;    
+    
+    if (bit_check(gFlags, FLAG_KABOOM)) {
+      // special FX    
+      if (rng_get() < 40) OCR1A = 100;
+      else OCR1A = 2400;
+    
+      if (rng_get() < 40) OCR1B = 100;
+      else OCR1B = 2400;
+
+      if (rng_get() < 40) OCR0A = 255;
+      else OCR0A = 0;
+
+      if (rng_get() < 40) OCR0B = 255;
+      else OCR0B = 0;
+    }
   }
-  /*
-  static word dir = -4;
-  
-  word min = ICR1 / 6;
-  word max = ICR1 / 6 * 5;
-  OCR1A += dir;
-  OCR1B += dir;
-  
-  if (OCR1A > max) {
-    dir = -dir;
-    OCR1A = max;
-    OCR1B = max;
-  }
-  if (OCR1A < min) {
-    dir = -dir;
-    OCR1A = min;
-    OCR1B = min;
-  }
-  */
 }
 
 ISR(PCINT0_vect) {  
