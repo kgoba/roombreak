@@ -12,6 +12,9 @@ import webapp
     
 from signal import pause
 
+EXPLODE_TIME = 5
+EXPLODE_TRACK = 3
+
 import argparse
 import logging
 import threading
@@ -313,6 +316,9 @@ class Master:
         self.dimmer.setDimmer1(0)
         self.dimmer.setDimmer2(0)
         self.dimmer.setDimmer4(0)
+        
+    def explode(self):
+        self.bus.setParameter('ALL', 3, bytearray( (EXPLODE_TIME, EXPLODE_TRACK) ))
 
     def scriptThread(self):
         logging.info("Scheduler thread started")
@@ -322,7 +328,7 @@ class Master:
             'Train'     : lambda: self.player.setTrack1(2),
             'Tick'      : lambda: self.player.setTrack1(5),
             'Darkness'  : lambda: self.darkness(),
-            'Explode'   : lambda: self.player.setTrack1(3),
+            'Explode'   : lambda: self.explode(),
             'Laugh'     : lambda: self.player.setTrack2(2),
             'Announce'  : lambda: self.player.setTrack2(1),
             'Radio'     : lambda: self.player.setTrack3(1),

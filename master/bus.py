@@ -67,7 +67,8 @@ class Bus:
         'VALVE' : 24,
         'WC'    : 25,
         'PLAYER': 26,
-        'DIMMER': 27
+        'DIMMER': 27,
+        'ALL'   : 255
     }
     
     def __init__(self, serial, crc = CRC(8, CRC_POLYNOMIAL, CRC_INITIAL)):
