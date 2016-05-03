@@ -197,17 +197,24 @@ void loop() {
     if (b3) gButtonState |= 4;
     if (b4) gButtonState |= 8;
 
-    dimLight.set(b2 && !(bit_check(gFlags, FLAG_TIMEOUT)));
+    if ((pinRead(PIN_PIR) == LOW) && !(bit_check(gFlags, FLAG_TIMEOUT)) ) {
+      dimLight.set(1);      
+    }
+    else {
+      dimLight.set(0);
+    }
 
     if (b3) fanRampUp(2);
     else fanRampDown(4);
   
-    if (pinRead(PIN_PIR) == LOW) {
+    if (b2) {
       player1.play(1);
       //_delay_ms(5);
       //player1.stop();
     }
-    else player1.stop();
+    else {
+      player1.stop();
+    }
   
     if (b1 && b2 && b3 && b4) {
       if (!wasDone) {
