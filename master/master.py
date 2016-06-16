@@ -12,8 +12,17 @@ import webapp
     
 from signal import pause
 
-EXPLODE_TIME = 5
+EXPLODE_TIME = 18
 EXPLODE_TRACK = 3
+
+DIM1_INTRO = 50
+DIM2_INTRO = 40
+
+DIM1_TRAIN = 35
+DIM2_TRAIN = 60
+
+DIM1_NORMAL = 60
+DIM2_NORMAL = 40
 
 import argparse
 import logging
@@ -222,8 +231,8 @@ class Master:
                 self.dimmer.setDimmer1(100)
                 self.dimmer.setDimmer2(100)
             else:
-                self.lastDimmer1 = self.dimmer.setDimmer1(40)
-                self.lastDimmer2 = self.dimmer.setDimmer2(25)
+                self.lastDimmer1 = self.dimmer.setDimmer1(DIM1_INTRO)
+                self.lastDimmer2 = self.dimmer.setDimmer2(DIM2_INTRO)
                 self.dimmer.setDimmer3(0)
                 self.dimmer.setDimmer4(0)
             pass
@@ -241,13 +250,13 @@ class Master:
         
     def ledsOn(self):
         self.dimmer.setDimmer4(30)
-        self.dimmer.setDimmer1(25)
-        self.dimmer.setDimmer2(40)
+        self.dimmer.setDimmer1(DIM1_TRAIN)
+        self.dimmer.setDimmer2(DIM2_TRAIN)
     
     def ledsOff(self):
         self.dimmer.setDimmer4(0)
-        self.dimmer.setDimmer1(50)
-        self.dimmer.setDimmer2(25)
+        self.dimmer.setDimmer1(DIM1_NORMAL)
+        self.dimmer.setDimmer2(DIM2_NORMAL)
               
     def timeSyncer(self):
         logging.info("Status/time updater thread started")
@@ -318,7 +327,7 @@ class Master:
         self.dimmer.setDimmer4(0)
         
     def explode(self):
-        self.bus.setParameter('ALL', 3, bytearray( (EXPLODE_TIME, EXPLODE_TRACK) ))
+        self.bus.getParameter('ALL', 3, bytearray( (EXPLODE_TIME, EXPLODE_TRACK) ))
 
     def scriptThread(self):
         logging.info("Scheduler thread started")
@@ -421,9 +430,9 @@ class Master:
         t3.start()
 
         webapp.app.config['MASTER'] = self
-        webapp.app.logger.setLevel(logging.WARNING)
+        webapp.app.logger.setLevel(logging.DEBUG)
         log = logging.getLogger('werkzeug')
-        if log: log.setLevel(logging.WARNING)
+        if log: log.setLevel(logging.DEBUG)
         webapp.startServer()
         #webapp.app.run(debug=False, host='0.0.0.0', port=8088)
         
@@ -492,5 +501,5 @@ if __name__ == "__main__":
   parser.add_argument('-s', '--script', help = 'Script')
 
   args = parser.parse_args(sys.argv[1:])
-  
+
   main(args)
