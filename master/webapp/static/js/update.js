@@ -10,7 +10,8 @@ function getTimeString(minutes, seconds)
 
 function setTime() {
     var min = $('#setminutes').val();
-    var sec = $('#setseconds').val();
+    //var sec = $('#setseconds').val();
+    var sec = 0;
     $.getJSON('/_time', { "minutes": min, "seconds": sec });
 }
 
